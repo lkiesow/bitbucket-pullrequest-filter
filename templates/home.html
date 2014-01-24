@@ -1,9 +1,13 @@
 {% extends "layout.html" %}
 {% block body %}
-<h2>Opencast Matterhorn: Open Pull Requests</h2>
+<h2 style="text-align: center;">Opencast Matterhorn: Open Pull Requests</h2>
 <div id="pull-requests">
 
-	<div style="padding: 10px;">
+	<div style="padding-left: 25px; text-align: center;">
+		{{ requests|length }} pull requests open.
+	</div>
+
+	<div style="padding: 30px; text-align: center;">
 		Global Search:
 		<input class="search" placeholder="Global search" />
 	</div>
@@ -11,31 +15,33 @@
 	<table>
 		<thead>
 			<tr>
-				<th class="sort" data-sort="id"            >ID</th>
-				<th class="sort" data-sort="author"        >Author</th>
-				<th class="sort" data-sort="title"         >Title</th>
-				<th class="sort" data-sort="source_repo"   >Source (Repository)</th>
-				<th class="sort" data-sort="source_branch" >Source (Branch)</th>
-				<th class="sort" data-sort="dest_branch"   >Destination (Branch)</th>
+				<th class="sort" data-sort="id"            >ID ▲▼</th>
+				<th class="sort" data-sort="author"        >Author ▲▼</th>
+				<th class="sort" data-sort="title"         >Title ▲▼</th>
+				<th class="sort" data-sort="source_repo"   >Source (Repository) ▲▼</th>
+				<th class="sort" data-sort="source_branch" >Source (Branch) ▲▼</th>
+				<th class="sort" data-sort="dest_branch"   >Destination (Branch) ▲▼</th>
 			</tr>
 			<tr>
-				<th><input id="search-id" placeholder="Search for ID" size=3 /></th>
-				<th><input id="search-author" placeholder="Search for author" size=15 /></th>
-				<th><input id="search-title" placeholder="Search for title" size=35 /></th>
-				<th><input id="search-source_repo" placeholder="Search for source-repo" size=20 /></th>
+				<th><input id="search-id"            placeholder="Search for ID"            size=3  /></th>
+				<th><input id="search-author"        placeholder="Search for author"        size=15 /></th>
+				<th><input id="search-title"         placeholder="Search for title"         size=35 /></th>
+				<th><input id="search-source_repo"   placeholder="Search for source-repo"   size=20 /></th>
 				<th><input id="search-source_branch" placeholder="Search for source-branch" size=20 /></th>
-				<th><input id="search-dest_branch" placeholder="Search for dest-branch" size=20 /></th>
+				<th><input id="search-dest_branch"   placeholder="Search for dest-branch"   size=20 /></th>
 			</tr>
 		</thead>
 		<tbody class=list>
 			{% for r in requests %}
 			<tr>
-				<td class=id>#{{ r['id'] }}</td>
+				<td class=id><a title="Go to pull request" href={{ r['links']['html']['href'] }}>#{{ r['id'] }}</a></td>
 				<td class=author title="{{ r['author']['username'] }}">{{ r['author'].get('display_name') }}</td>
-				<td class=title><a href={{ r['links']['html']['href'] }}>{{ r.get('title') }}</a></td>
+				<td class=title><a title="Go to pull request" href={{ r['links']['html']['href'] }}>{{ r.get('title') }}</a></td>
 				<td class=source_repo>{{ r['source']['repository']['full_name'] }}</td>
 				<td class=source_branch>{{ r['source']['branch']['name'] }}</td>
-				<td class=dest_branch>{{ r['destination']['branch']['name'] }}</td>
+				<td class=dest_branch><a title="Filter by branch" 
+						href='#' onclick="branchfilter('{{ r['destination']['branch']['name'] }}');"
+						>{{ r['destination']['branch']['name'] }}</a></td>
 			</tr>
 			{% endfor %}
 		</tbody>

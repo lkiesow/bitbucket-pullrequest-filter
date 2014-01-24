@@ -1,5 +1,15 @@
-table {
+h2 {
+	text-align: center;
+	margin: 25px;
+	margin-bottom: 5px;
+}
+
+#pull-requests {
 	font-size: smaller;
+}
+
+table {
+	margin: 0 auto;
 }
 
 thead {
@@ -16,6 +26,10 @@ tbody tr:hover {
 
 td {
 	padding: 5px;
+}
+
+th {
+	text-align: left;
 }
 
 a {
