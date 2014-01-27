@@ -6,7 +6,7 @@
 	<script>
 		$(document).ready(function() {
 			options = {
-				valueNames: [ 'id', 'author', 'title', 'source_repo', 'source_branch', 'dest_branch' ]
+				valueNames: [ 'id', 'author', 'title', 'source_repo', 'source_branch', 'dest_branch', 'reviewer' ]
 			};
 			var list = new List('pull-requests', options);
 
@@ -54,6 +54,14 @@
 				var dest_branch = $('#search-dest_branch').val().toLowerCase();
 				list.filter(function(item) {
 					return item.values().dest_branch.toLowerCase().indexOf(dest_branch) >= 0;
+				});
+				return false;
+			});
+
+			$('#search-reviewer').keyup(function() {
+				var reviewer = $('#search-reviewer').val().toLowerCase();
+				list.filter(function(item) {
+					return item.values().reviewer.toLowerCase().indexOf(reviewer) >= 0;
 				});
 				return false;
 			});
