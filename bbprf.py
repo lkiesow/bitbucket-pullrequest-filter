@@ -43,7 +43,7 @@ def home():
 
 	# Add reviewer
 	for req in requests:
-		req[u'reviewer'] = reviewers.get(req['id'])
+		req[u'reviewer'] = reviewers.get(req['id']) or ''
 
 	return render_template('home.html', requests=requests)
 	#return '%s' % [ pr.get('title') + '\n' for pr in requests ]

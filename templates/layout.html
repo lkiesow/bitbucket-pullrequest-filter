@@ -3,95 +3,13 @@
 <head>
 	<script src="http://ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
 	<script src="http://listjs.com/no-cdn/list.js"></script>
-	<script>
-		$(document).ready(function() {
-			options = {
-				valueNames: [ 'id', 'author', 'title', 'source_repo', 'source_branch', 'dest_branch', 'reviewer' ]
-			};
-			var list = new List('pull-requests', options);
-
-			$('#search-id').keyup(function() {
-				var id = $('#search-id').val();
-				list.filter(function(item) {
-					return item.values().id.indexOf(id) >= 0;
-				});
-				return false;
-			});
-
-			$('#search-author').keyup(function() {
-				var author = $('#search-author').val().toLowerCase();
-				list.filter(function(item) {
-					return item.values().author.toLowerCase().indexOf(author) >= 0;
-				});
-				return false;
-			});
-
-			$('#search-title').keyup(function() {
-				var title = $('#search-title').val().toLowerCase();
-				list.filter(function(item) {
-					return item.values().title.toLowerCase().indexOf(title) >= 0;
-				});
-				return false;
-			});
-
-			$('#search-source_repo').keyup(function() {
-				var source_repo = $('#search-source_repo').val().toLowerCase();
-				list.filter(function(item) {
-					return item.values().source_repo.toLowerCase().indexOf(source_repo) >= 0;
-				});
-				return false;
-			});
-
-			$('#search-source_branch').keyup(function() {
-				var source_branch = $('#search-source_branch').val().toLowerCase();
-				list.filter(function(item) {
-					return item.values().source_branch.toLowerCase().indexOf(source_branch) >= 0;
-				});
-				return false;
-			});
-
-			$('#search-dest_branch').keyup(function() {
-				var dest_branch = $('#search-dest_branch').val().toLowerCase();
-				list.filter(function(item) {
-					return item.values().dest_branch.toLowerCase().indexOf(dest_branch) >= 0;
-				});
-				return false;
-			});
-
-			$('#search-reviewer').keyup(function() {
-				var reviewer = $('#search-reviewer').val().toLowerCase();
-				list.filter(function(item) {
-					return item.values().reviewer.toLowerCase().indexOf(reviewer) >= 0;
-				});
-				return false;
-			});
-		})
-
-		function branchfilter(branch) {
-			$('#search-dest_branch').val( branch );
-			$('#search-dest_branch').keyup();
-		}
-	</script>
-	<title>lf-portal</title>
+	<script src="{{ url_for('static', filename='func.js') }}"></script>
+	<title>Opencast Matterhorn: Open Pull Requests</title>
 	<link rel=stylesheet type=text/css href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
 <div class=page>
-	<!--
-	<a href="-- url_for('home') }}"><h1>lf-portal</h1></a>
-	<nav>
-		<a href="-- url_for('home') }}">Home</a>
-		<a href="-- url_for('lectures', page=1) }}">Lectures</a>
-
-	</nav>
-	-->
 	{% block body %}{% endblock %}
-
-	<!--
-	<footer>
-	Powered by <a href="https://github.com/lkiesow/lf-portal">lf-portal</a>
-	</footer>
-	-->
 </div>
 
 </body>
