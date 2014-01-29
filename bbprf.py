@@ -45,8 +45,10 @@ def home():
 	for req in requests:
 		req[u'reviewer'] = reviewers.get(req['id']) or ''
 
+	# Sort by id
+	requests.sort(key=lambda r: r.get('id'))
+
 	return render_template('home.html', requests=requests)
-	#return '%s' % [ pr.get('title') + '\n' for pr in requests ]
 
 if __name__ == "__main__":
 	app.run(debug=True)
