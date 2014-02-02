@@ -19,7 +19,7 @@ reviewers = {}
 def get_reviewer(req):
 	global reviewers
 
-	id = req['id']
+	id = str(req['id'])
 	url = 'https://bitbucket.org/api/2.0/repositories/opencast-community/matterhorn/pullrequests/%s/comments' % id
 
 	u = urllib2.urlopen(urllib2.Request(url))
@@ -82,7 +82,7 @@ def home():
 
 	# Add reviewer
 	for req in requests:
-		reviewer = reviewers.get(req['id']) or {}
+		reviewer = reviewers.get(str(req['id'])) or {}
 		if reviewer.get('name'):
 			req[u'reviewer'] = reviewer['name']
 
