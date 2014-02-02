@@ -13,7 +13,7 @@ from flask import Flask, render_template
 app = Flask(__name__)
 
 
-reviewers = {}
+reviewers = None
 
 
 def get_reviewer(req):
@@ -65,6 +65,8 @@ def save_reviewer():
 @app.route("/")
 def home():
 	global reviewers
+	if not reviewers:
+		load_reviewer()
 
 	requests = []
 
@@ -97,5 +99,4 @@ def home():
 
 
 if __name__ == "__main__":
-	load_reviewer()
 	app.run(debug=True)
