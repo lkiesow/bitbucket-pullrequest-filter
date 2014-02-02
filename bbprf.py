@@ -13,10 +13,13 @@ from flask import Flask, render_template
 app = Flask(__name__)
 
 
-last_updated = {}
+reviewers = {}
 
 
-def get_reviewer(id):
+def get_reviewer(req):
+	global reviewers
+
+	id = req['id']
 	url = 'https://bitbucket.org/api/2.0/repositories/opencast-community/matterhorn/pullrequests/%s/comments' % id
 
 	u = urllib2.urlopen(urllib2.Request(url))
@@ -25,33 +28,43 @@ def get_reviewer(id):
 	finally:
 		u.close()
 
+	reviewers[id] = {}
+
 	for c in data.get('values') or []:
 		if '//review//' in c['content']['raw']:
-			reviewer = c['user']['display_name']
-			print 'Found reviewer for %s: %s' % (id, reviewer)
-			with open('reviewers', 'a') as f:
-				f.write('%s=%s\n' % (id, reviewer))
-			return reviewer
+			r = c['user']['display_name']
+			print 'Found reviewer for %s: %s' % (id, r)
+			if reviewers[id].get('last_updated'):
+				del reviewers[id]['last_updated']
+			reviewers[id]['name'] = r
+			return r
 
-	print 'No reviewer found for %s', id
-	return None
+	reviewers[id]['last_updated'] = req.get('updated_on')
+	print 'No reviewer found for %s' % id
+	return ''
+
+
+def load_reviewer():
+	global reviewers
+	try:
+		with open('reviewers', 'r') as f:
+			reviewers = json.loads(f.read())
+	except:
+		pass
+
+
+def save_reviewer():
+	global reviewers
+	try:
+		with open('reviewers', 'w') as f:
+			f.write(json.dumps(reviewers, sort_keys=True))
+	except:
+		pass
 
 
 @app.route("/")
 def home():
-	global last_updated
-
-	reviewers = {}
-	try:
-		with open('reviewers', 'r') as f:
-			for line in f.read().split('\n'):
-				try:
-					issue, reviewer = line.split('=', 1)
-					reviewers[int(issue)] = reviewer
-				except:
-					pass
-	except IOError:
-		pass
+	global reviewers
 
 	requests = []
 
@@ -69,19 +82,20 @@ def home():
 
 	# Add reviewer
 	for req in requests:
-		if reviewers.get(req['id']):
-			req[u'reviewer'] = reviewers.get(req['id'])
-		else:
-			if req.get('updated_on') != last_updated.get(req['id']):
-				req[u'reviewer'] = get_reviewer(req['id']) or ''
-			if not req.get(u'reviewer'):
-				req[u'reviewer'] = ''
-				last_updated[req['id']] = req.get('updated_on')
+		reviewer = reviewers.get(req['id']) or {}
+		if reviewer.get('name'):
+			req[u'reviewer'] = reviewer['name']
+
+		elif req.get('updated_on') != reviewer.get('last_updated'):
+			req[u'reviewer'] = get_reviewer(req)
+	save_reviewer()
 
 	# Sort by id
 	requests.sort(key=lambda r: r.get('id'))
 
 	return render_template('home.html', requests=requests)
 
+
 if __name__ == "__main__":
+	load_reviewer()
 	app.run(debug=True)

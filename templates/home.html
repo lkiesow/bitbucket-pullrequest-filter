@@ -44,7 +44,7 @@
 				<td class=dest_branch><a title="Filter by branch" 
 						href='#' onclick="branchfilter('{{ r['destination']['branch']['name'] }}');"
 						>{{ r['destination']['branch']['name'] }}</a></td>
-				<td class=reviewer>{{ r['reviewer'] }}</td>
+				<td class=reviewer>{{ r.get('reviewer') or '' }}</td>
 			</tr>
 			{% endfor %}
 		</tbody>
