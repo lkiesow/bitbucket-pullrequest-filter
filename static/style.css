@@ -40,3 +40,19 @@ a {
 	text-decoration: none;
 	color: black;
 }
+
+#instruction {
+	max-width: 710px;
+	padding: 25px;
+	font-size: smaller;
+	margin: 0 auto;
+	color: gray;
+}
+
+footer {
+	text-align: right;
+	font-size: x-small;
+	padding-top: 50px;
+	margin: 0 50px;
+	color: gray;
+}
