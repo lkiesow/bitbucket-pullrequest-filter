@@ -50,7 +50,7 @@ def load_reviewer():
 		with open('reviewers', 'r') as f:
 			reviewers = json.loads(f.read())
 	except:
-		pass
+		reviewers = {}
 
 
 def save_reviewer():
