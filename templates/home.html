@@ -39,9 +39,9 @@
 				<td class=id><a title="Go to pull request" href={{ r['links']['html']['href'] }}>#{{ r['id'] }}</a></td>
 				<td class=author title="{{ r['author']['username'] }}">{{ r['author'].get('display_name') }}</td>
 				<td class=title><a title="Go to pull request" href={{ r['links']['html']['href'] }}>{{ r['title']|truncate(60, False, '…') }}</a></td>
-				<td class=source_repo>{{ r['source']['repository']['full_name'] }}</td>
+				<td class=source_repo>{{ r['source']['repository']['full_name']|truncate(30, True, '…') }}</td>
 				<td class=source_branch>{{ r['source']['branch']['name'] }}</td>
-				<td class=dest_branch><a title="Filter by branch" 
+				<td class=dest_branch><a title="Filter by branch"
 						href='#' onclick="branchfilter('{{ r['destination']['branch']['name'] }}');"
 						>{{ r['destination']['branch']['name'] }}</a></td>
 				<td class=reviewer>{{ r.get('reviewer') or '' }}</td>
