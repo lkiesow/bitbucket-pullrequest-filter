@@ -15,7 +15,17 @@ $(document).ready(function() {
 			return false;
 		});
 	}
+
+	$('input').each(function() {
+		$(this).parent().append('<a onclick="cleanup(this);" class=clean>×</a>');
+	});
 })
+
+function cleanup(e) {
+	var inp = $(e).parent().find('input');
+	inp.val('');
+	inp.keyup();
+}
 
 function branchfilter(branch) {
 	$('#search-dest_branch').val( branch );

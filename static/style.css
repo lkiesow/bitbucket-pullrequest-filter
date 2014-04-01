@@ -22,6 +22,12 @@ thead {
 
 input {
 	border: 1px solid silver;
+	padding-right: 20px;
+}
+
+.clean {
+	margin-left: -20px;
+	cursor: pointer;
 }
 
 tbody tr:hover {
