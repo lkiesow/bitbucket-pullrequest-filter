@@ -1,6 +1,6 @@
 $(document).ready(function() {
 	options = {
-		valueNames: [ 'id', 'author', 'title', 'source_repo', 'source_branch', 'dest_branch', 'reviewer' ]
+		valueNames: [ 'id', 'created_on', 'author', 'title', 'source_repo', 'source_branch', 'dest_branch', 'reviewer' ]
 	};
 	var list = new List('pull-requests', options);
 

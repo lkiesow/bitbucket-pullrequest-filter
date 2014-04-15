@@ -9,6 +9,7 @@ sys.setdefaultencoding('utf8')
 import urllib2
 import json
 from pprint import pprint
+from dateutil.parser import parse
 from flask import Flask, render_template
 app = Flask(__name__)
 
@@ -90,6 +91,7 @@ def home():
 
 		elif req.get('updated_on') != reviewer.get('last_updated'):
 			req[u'reviewer'] = get_reviewer(req)
+		req['created_on_fmt'] = parse(req['created_on']).strftime('%Y-%m-%d')
 	save_reviewer()
 
 	# Sort by id

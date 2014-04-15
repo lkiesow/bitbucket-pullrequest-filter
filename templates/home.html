@@ -16,6 +16,7 @@
 		<thead>
 			<tr>
 				<th class="sort" data-sort="id"            >ID ▲▼</th>
+				<th class="sort" data-sort="created_on"    >Created ▲▼</th>
 				<th class="sort" data-sort="author"        >Author ▲▼</th>
 				<th class="sort" data-sort="title"         >Title ▲▼</th>
 				<th class="sort" data-sort="source_repo"   >Source (Repository) ▲▼</th>
@@ -25,11 +26,12 @@
 			</tr>
 			<tr>
 				<th><input id="search-id"            placeholder="Search for ID"            size=3  /></th>
-				<th><input id="search-author"        placeholder="Search for author"        size=15 /></th>
+				<th><input id="search-created_on"    placeholder="Search for creation date" size=7  /></th>
+				<th><input id="search-author"        placeholder="Search for author"        size=11 /></th>
 				<th><input id="search-title"         placeholder="Search for title"         size=35 /></th>
 				<th><input id="search-source_repo"   placeholder="Search for source-repo"   size=20 /></th>
 				<th><input id="search-source_branch" placeholder="Search for source-branch" size=20 /></th>
-				<th><input id="search-dest_branch"   placeholder="Search for dest-branch"   size=15 /></th>
+				<th><input id="search-dest_branch"   placeholder="Search for dest-branch"   size=8  /></th>
 				<th><input id="search-reviewer"      placeholder="Search for reviewer"      size=10 /></th>
 			</tr>
 		</thead>
@@ -37,6 +39,7 @@
 			{% for r in requests %}
 			<tr>
 				<td class=id><a title="Go to pull request" href={{ r['links']['html']['href'] }}>#{{ r['id'] }}</a></td>
+				<td class=created_on><span title="{{ r['created_on'] }}">{{ r['created_on_fmt'] }}</span></a></td>
 				<td class=author title="{{ r['author']['username'] }}">{{ r['author'].get('display_name') }}</td>
 				<td class=title><a title="Go to pull request" href={{ r['links']['html']['href'] }}>{{ r['title']|truncate(60, False, '…') }}</a></td>
 				<td class=source_repo>{{ r['source']['repository']['full_name']|truncate(30, True, '…') }}</td>

@@ -62,3 +62,7 @@ footer {
 	margin: 0 50px;
 	color: gray;
 }
+
+.sort {
+	cursor: pointer;
+}
