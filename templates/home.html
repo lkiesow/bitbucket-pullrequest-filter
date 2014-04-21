@@ -15,6 +15,7 @@
 	<table>
 		<thead>
 			<tr>
+				<th></th>
 				<th class="sort" data-sort="id"            >ID ▲▼</th>
 				<th class="sort" data-sort="created_on"    >Created ▲▼</th>
 				<th class="sort" data-sort="author"        >Author ▲▼</th>
@@ -25,6 +26,7 @@
 				<th class="sort" data-sort="reviewer"      >Reviewer ▲▼</th>
 			</tr>
 			<tr>
+				<th></th>
 				<th><input id="search-id"            placeholder="Search for ID"            size=3  /></th>
 				<th><input id="search-created_on"    placeholder="Search for creation date" size=7  /></th>
 				<th><input id="search-author"        placeholder="Search for author"        size=11 /></th>
@@ -38,12 +40,13 @@
 		<tbody class=list>
 			{% for r in requests %}
 			<tr>
+				<td class={{ 'appr_r' if r['approved_by_reviewer'] else 'appr_o' }}>{{ '✔' if r['approved'] }}</td>
 				<td class=id><a title="Go to pull request" href={{ r['links']['html']['href'] }}>#{{ r['id'] }}</a></td>
 				<td class=created_on><span title="{{ r['created_on'] }}">{{ r['created_on_fmt'] }}</span></a></td>
 				<td class=author title="{{ r['author']['username'] }}">{{ r['author'].get('display_name') }}</td>
 				<td class=title><a title="Go to pull request" href={{ r['links']['html']['href'] }}>{{ r['title']|truncate(60, False, '…') }}</a></td>
-				<td class=source_repo>{{ r['source']['repository']['full_name']|truncate(30, True, '…') }}</td>
-				<td class=source_branch>{{ r['source']['branch']['name'] }}</td>
+				<td class=source_repo>{{ r['source']['repository']['full_name']|truncate(29, True, '…') }}</td>
+				<td class=source_branch>{{ r['source']['branch']['name']|truncate(30, True, '…') }}</td>
 				<td class=dest_branch><a title="Filter by branch"
 						href='#' onclick="branchfilter('{{ r['destination']['branch']['name'] }}');"
 						>{{ r['destination']['branch']['name'] }}</a></td>

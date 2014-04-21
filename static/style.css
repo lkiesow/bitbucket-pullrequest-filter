@@ -66,3 +66,11 @@ footer {
 .sort {
 	cursor: pointer;
 }
+
+.appr_r {
+	color: lime;
+}
+
+.appr_o {
+	color: gray;
+}
