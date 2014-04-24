@@ -21,7 +21,7 @@
 				<th>Days</th>
 			</tr>
 		</thead>
-		<tbody class=list>
+		<tbody>
 			{% for r in releasetickets %}
 			<tr {{ 'style=color:red;' if r['since-last-change'] > 2 else '' | safe }}>
 				<td>{{ r['version'] }}</td>
