@@ -12,6 +12,27 @@
 		<input class="search" placeholder="Global search" />
 	</div>
 
+	<table class=releasetickets>
+		<thead>
+			<tr>
+				<th>Release</th>
+				<th>Current Assignee</th>
+				<th>Reassigned</th>
+				<th>Days</th>
+			</tr>
+		</thead>
+		<tbody class=list>
+			{% for r in releasetickets %}
+			<tr {{ 'style=color:red;' if r['since-last-change'] > 2 else '' | safe }}>
+				<td>{{ r['version'] }}</td>
+				<td>{{ r['assignee'] }}</td>
+				<td>{{ r['last-changed'] }}</td>
+				<td>{{ r['since-last-change'] }} days</td>
+			</tr>
+			{% endfor %}
+		</tbody>
+	</table>
+
 	<table>
 		<thead>
 			<tr>

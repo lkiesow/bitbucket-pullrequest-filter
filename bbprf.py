@@ -6,7 +6,7 @@ import sys
 reload(sys)
 sys.setdefaultencoding('utf8')
 
-import time
+import time, datetime, pytz
 import daemon
 import signal, errno
 from daemon import runner
@@ -28,11 +28,21 @@ def home():
 	except:
 		return {}
 
-
 	# Sort by id
 	requests.sort(key=lambda r: r.get('id'))
 
-	return render_template('home.html', requests=requests)
+	# Additional, get data for release tickets
+	releasetickets = []
+	try:
+		with open('releasetickets.json', 'r') as f:
+			releasetickets = json.loads(f.read())
+	except:
+		return {}
+
+
+
+	return render_template('home.html', requests=requests,
+			releasetickets=releasetickets)
 
 
 #############################################################################
@@ -55,8 +65,8 @@ class Worker():
 
 	def __init__(self):
 		self.stdin_path = '/dev/null'
-		self.stdout_path = '/dev/tty'
-		self.stderr_path = '/dev/tty'
+		self.stdout_path = '/dev/null'
+		self.stderr_path = '/dev/null'
 		self.pidfile_path =  '%s/bbprf-worker.pid' % self.path
 		self.pidfile_timeout = 0
 
@@ -163,6 +173,40 @@ class Worker():
 		except:
 			pass
 
+		# Finally try to get the release tickets:
+		releasetickets = [10049, 10125]
+		ticketdata = []
+		for t in releasetickets:
+			nexturl = 'https://opencast.jira.com/rest/api/2/issue/MH-%i?expand=changelog' % t
+			u = urllib2.urlopen(urllib2.Request(nexturl))
+			try:
+				data = json.loads(u.read())
+				# try to find out when the last person was assigned:
+				lastchanges = data['fields']['updated']
+				for h in data['changelog']['histories'][::-1]:
+					if [ True for i in h['items'] if i['field'] == 'assignee' ]:
+						lastchanged = h['created']
+						break
+				data = data['fields']
+				ticketdata.append({
+					'version'           : data['fixVersions'][0]['name'] if data['fixVersions'] else '',
+					'last-changed'      : parse(lastchanged).strftime('%Y-%m-%d %H:%M:%S'),
+					'since-last-change' : (datetime.datetime.now(pytz.utc) - parse(lastchanged)).days,
+					'assignee'          : data['assignee'].get('displayName') if data.get('assignee') else ''
+					})
+			except:
+				pass
+			finally:
+				u.close()
+		try:
+			with open('%s/releasetickets.tmp' % self.path, 'w') as f:
+				f.write(json.dumps(ticketdata, sort_keys=True))
+			os.rename('%s/releasetickets.tmp' % self.path, '%s/releasetickets.json' % self.path)
+		except:
+			pass
+
+
+
 
 	def complete_db(self, last):
 		print 'Trying to fill the database'
@@ -171,7 +215,7 @@ class Worker():
 		for i in xrange(last):
 			if not i:
 				continue
-			print '\r#%i' % i, 
+			print '\r#%i' % i,
 			sys.stdout.flush()
 			rev = {}
 			req = { 'id' : i }
@@ -203,7 +247,10 @@ class Worker():
 
 	def run(self):
 		while True:
-			self.worker()
+			try:
+				self.worker()
+			except:
+				pass
 			if not self.server_alive():
 				exit()
 			time.sleep(60)
