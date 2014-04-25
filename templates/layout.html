@@ -2,7 +2,7 @@
 <html>
 <head>
 	<script src="http://ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
-	<script src="http://listjs.com/no-cdn/list.js"></script>
+	<script src="{{ url_for('static', filename='list.min.js') }}"></script>
 	<script src="{{ url_for('static', filename='func.js') }}"></script>
 	<title>Opencast Matterhorn: Open Pull Requests</title>
 	<link rel=stylesheet type=text/css href="{{ url_for('static', filename='style.css') }}">
