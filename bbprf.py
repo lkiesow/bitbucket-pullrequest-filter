@@ -15,12 +15,13 @@ import json
 import os
 from pprint import pprint
 from dateutil.parser import parse
-from flask import Flask, render_template
+from flask import Flask, render_template, request
 app = Flask(__name__)
 
 
 @app.route("/")
-def home():
+@app.route("/<key>/<path:value>")
+def home(key=None, value=None):
 	requests = []
 	try:
 		with open('pullrequests.json', 'r') as f:
@@ -42,7 +43,7 @@ def home():
 
 
 	return render_template('home.html', requests=requests,
-			releasetickets=releasetickets)
+			releasetickets=releasetickets, key=key, value=value)
 
 
 #############################################################################

@@ -6,8 +6,20 @@
 	<script src="{{ url_for('static', filename='func.js') }}"></script>
 	<title>Opencast Matterhorn: Open Pull Requests</title>
 	<link rel=stylesheet type=text/css href="{{ url_for('static', filename='style.css') }}">
+	{% if key and value %}
+	<script type=application/javascript>
+		$(document).ready(function() {
+			$('#search-{{ key }}').val('{{ value }}').keyup();
+		});
+	</script>
+	{% endif %}
 </head>
 <body>
+
+<div id=bookmark>
+	<a title="Permalink to this filter" onclick="bookmark();">⚑</a>
+</div>
+
 <div class=page>
 	{% block body %}{% endblock %}
 </div>

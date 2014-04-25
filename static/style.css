@@ -89,3 +89,12 @@ footer {
 .releasetickets th[title] {
 	cursor: help;
 }
+
+#bookmark {
+	float: right;
+	margin: 10px;
+}
+
+#bookmark a {
+	cursor: pointer;
+}

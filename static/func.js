@@ -1,3 +1,4 @@
+current_filter = '';
 $(document).ready(function() {
 	options = {
 		valueNames: [ 'id', 'created_on', 'author', 'title', 'source_repo', 'source_branch', 'dest_branch', 'reviewer' ]
@@ -9,6 +10,7 @@ $(document).ready(function() {
 		$('#search-' + v).keyup(function(e) {
 			var v = e.target.id.replace(/^search-/, '');
 			var s = $(e.target).val().toLowerCase();
+			current_filter = s ? v + '/' + s : '';
 			list.filter(function(item) {
 				return item.values()[v].toLowerCase().indexOf(s) >= 0;
 			});
@@ -19,6 +21,7 @@ $(document).ready(function() {
 	$('input').each(function() {
 		$(this).parent().append('<a onclick="cleanup(this);" class=clean>×</a>');
 	});
+
 })
 
 function cleanup(e) {
@@ -30,4 +33,8 @@ function cleanup(e) {
 function branchfilter(branch) {
 	$('#search-dest_branch').val( branch );
 	$('#search-dest_branch').keyup();
+}
+
+function bookmark() {
+	window.location.href = "/" + current_filter;
 }
