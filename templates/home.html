@@ -23,7 +23,7 @@
 		</thead>
 		<tbody>
 			{% for r in releasetickets %}
-			<tr {{ 'style=color:red;' if r['since-last-change'] > 2 else '' | safe }}>
+			<tr {{ 'style=color:red;' if r['since-last-change'] >= 2 else '' | safe }}>
 				<td>{{ r['version'] }}</td>
 				<td>{{ r['assignee'] }}</td>
 				<td>{{ r['last-changed'] }}</td>
