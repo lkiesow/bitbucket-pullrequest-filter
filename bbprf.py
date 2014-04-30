@@ -76,14 +76,24 @@ class Worker():
 
 		id = str(req['id'])
 		url = 'https://bitbucket.org/api/2.0/repositories/opencast-community/matterhorn/pullrequests/%s/comments' % id
+		comments = []
 
-		u = urllib2.urlopen(urllib2.Request(url))
-		try:
-			data = json.loads(u.read())
-		finally:
-			u.close()
+		while url:
+			u = urllib2.urlopen(urllib2.Request(url))
+			try:
+				data = json.loads(u.read())
+				comments += data.get('values') or []
+				url = data.get('next')
+			finally:
+				u.close()
 
-		for c in data.get('values') or []:
+		# Make sure revies are sorted by date
+		comments = data.get('values') or []
+		comments.sort(key=lambda r: r.get('created_on'))
+
+		# Start with last comment to get the last person taking up the job as
+		# reviewer
+		for c in comments[::-1]:
 			if '//review//' in c['content']['raw']:
 				n = c['user']['display_name']
 				u = c['user']['username']
@@ -92,6 +102,7 @@ class Worker():
 				rev['user'] = u
 				req[u'reviewer'] = n
 				req[u'reviewer_user'] = u
+				return
 
 
 	def get_approved(self, req, rev):
