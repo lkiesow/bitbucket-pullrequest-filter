@@ -66,8 +66,8 @@ class Worker():
 
 	def __init__(self):
 		self.stdin_path = '/dev/null'
-		self.stdout_path = '/dev/null'
-		self.stderr_path = '/dev/null'
+		self.stdout_path = '%s/bbprf-worker.log' % self.path
+		self.stderr_path = '%s/bbprf-worker.error' % self.path
 		self.pidfile_path =  '%s/bbprf-worker.pid' % self.path
 		self.pidfile_timeout = 0
 
@@ -97,7 +97,7 @@ class Worker():
 			if '//review//' in c['content']['raw']:
 				n = c['user']['display_name']
 				u = c['user']['username']
-				#print 'Found reviewer for %s: %s' % (id, n)
+				print 'Found reviewer for %s: %s' % (id, n)
 				rev['name'] = n
 				rev['user'] = u
 				req[u'reviewer'] = n
@@ -182,8 +182,9 @@ class Worker():
 			with open('%s/pullrequests.tmp' % self.path, 'w') as f:
 				f.write(json.dumps(requests, sort_keys=True))
 			os.rename('%s/pullrequests.tmp' % self.path, '%s/pullrequests.json' % self.path)
-		except:
-			pass
+		except Exception as e:
+			sys.stderr.write('Error: Could not write pullrequests.json')
+			sys.stderr.write(' --> %s' % e.message)
 
 		# Finally try to get the release tickets:
 		releasetickets = [10049, 10125]
@@ -206,16 +207,18 @@ class Worker():
 					'since-last-change' : (datetime.datetime.now(pytz.utc) - parse(lastchanged)).days,
 					'assignee'          : data['assignee'].get('displayName') if data.get('assignee') else ''
 					})
-			except:
-				pass
+			except Exception as e:
+				sys.stderr.write('Error: Could not get release ticket (MH-%s)' % t)
+				sys.stderr.write(' --> %s' % e.message)
 			finally:
 				u.close()
 		try:
 			with open('%s/releasetickets.tmp' % self.path, 'w') as f:
 				f.write(json.dumps(ticketdata, sort_keys=True))
 			os.rename('%s/releasetickets.tmp' % self.path, '%s/releasetickets.json' % self.path)
-		except:
-			pass
+		except Exception as e:
+			sys.stderr.write('Error: Could not write releasetickets.json')
+			sys.stderr.write(' --> %s' % e.message)
 
 
 
