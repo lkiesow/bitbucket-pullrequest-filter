@@ -202,6 +202,7 @@ class Worker():
 						break
 				data = data['fields']
 				ticketdata.append({
+					'url'               : 'https://opencast.jira.com/browse/MH-%i' % t,
 					'version'           : data['fixVersions'][0]['name'] if data['fixVersions'] else '',
 					'last-changed'      : parse(lastchanged).strftime('%Y-%m-%d %H:%M:%S'),
 					'since-last-change' : (datetime.datetime.now(pytz.utc) - parse(lastchanged)).days,
