@@ -115,10 +115,10 @@ class Worker():
 		finally:
 			u.close()
 
-		req[u'approved'] = [ p['user']['username'] for p in data['participants'] if p['approved'] ]
-		rev['approved']  = req[u'approved']
-		req[u'approved_by_reviewer'] = req.get('reviewer_user') in rev['approved']
-		rev[u'approved_by_reviewer'] = req[u'approved_by_reviewer']
+		req['approved'] = [ p['user']['username'] for p in data['participants'] if p['approved'] ]
+		rev['approved'] = req[u'approved']
+		req['approved_by_reviewer'] = req.get('reviewer_user') in rev['approved']
+		rev['approved_by_reviewer'] = req[u'approved_by_reviewer']
 
 
 	def load_reviewer(self):
@@ -146,13 +146,15 @@ class Worker():
 
 		while nexturl:
 			#print 'Requesting data from %s' % nexturl
-			u = urllib2.urlopen(urllib2.Request(nexturl))
 			try:
+				u = urllib2.urlopen(urllib2.Request(nexturl))
 				data = json.loads(u.read())
 				requests += data.get('values') or []
 				nexturl = data.get('next')
-			finally:
 				u.close()
+			except Exception as e:
+				sys.stderr.write('Error: Could not get list of pull requests')
+				sys.stderr.write(' --> %s' % e.message)
 
 		# Add reviewer
 		for req in requests:
@@ -162,12 +164,15 @@ class Worker():
 				reviewers[str(req['id'])] = rev
 				rev['last_updated'] = req.get('updated_on')
 				self.get_reviewer(req, rev)
-				self.get_approved(req, rev)
-				print req['id'], req['approved']
 
 			elif rev.get('name'):
 				req[u'reviewer']             = rev['name']
 				req[u'reviewer_user']        = rev['user']
+
+			# Update the approved state in any case
+			try:
+				self.get_approved(req, rev)
+			except:
 				req['approved']              = rev[u'approved']
 				req[u'approved_by_reviewer'] = rev[u'approved_by_reviewer']
 
