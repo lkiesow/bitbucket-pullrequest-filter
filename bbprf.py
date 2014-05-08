@@ -102,7 +102,31 @@ class Worker():
 				rev['user'] = u
 				req[u'reviewer'] = n
 				req[u'reviewer_user'] = u
-				return
+				break
+
+		if not rev.get(u'user'):
+			rev['active'] = True
+			req['active'] = True
+			return
+
+		# Check if a pull request is active or on hold. If no //hold// can be
+		# found, it's active by default.
+		active = True
+		for c in comments[::-1]:
+			# Only the official reviewer can put a pull request on hold. Ignore
+			# all other comments.
+			if rev[u'user'] != c['user']['username']:
+				continue
+			if '//resume//' in c['content']['raw']:
+				active = True
+				break
+			if '//hold//' in c['content']['raw']:
+				active = False
+				break
+
+		rev['active'] = active
+		req['active'] = active
+
 
 
 	def get_approved(self, req, rev):

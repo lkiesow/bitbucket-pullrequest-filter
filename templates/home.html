@@ -60,7 +60,7 @@
 		</thead>
 		<tbody class=list>
 			{% for r in requests %}
-			<tr>
+			<tr {{ '' if r.get('active') else 'class=hold' }}>
 				{% if r['approved_by_reviewer'] %}
 				<td class=appr_r title="Approved by official reviewer">✔</td>
 				{% elif r['approved'] %}

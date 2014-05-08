@@ -98,3 +98,7 @@ footer {
 #bookmark a {
 	cursor: pointer;
 }
+
+.hold * {
+	color: gray;
+}
