@@ -6,6 +6,8 @@ import sys
 reload(sys)
 sys.setdefaultencoding('utf8')
 
+import config
+
 import json
 from flask import Flask, render_template, request
 app = Flask(__name__)
@@ -16,7 +18,7 @@ app = Flask(__name__)
 def home(key=None, value=None):
 	requests = []
 	try:
-		with open('pullrequests.json', 'r') as f:
+		with open(config.PULLREQUESTS, 'r') as f:
 			requests = json.loads(f.read())
 	except:
 		pass
@@ -27,7 +29,7 @@ def home(key=None, value=None):
 	# Additional, get data for release tickets
 	releasetickets = []
 	try:
-		with open('releasetickets.json', 'r') as f:
+		with open(config.RELEASETICKETS, 'r') as f:
 			releasetickets = json.loads(f.read())
 	except:
 		pass

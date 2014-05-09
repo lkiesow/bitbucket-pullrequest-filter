@@ -14,7 +14,9 @@ import urllib2
 import json
 import os
 from dateutil.parser import parse
+import config
 
+apiurl = 'https://bitbucket.org/api/2.0/repositories/%s/pullrequests' % config.REPOSITORY
 
 def start_daemon():
 	sys.argv = [ sys.argv[0], 'start' ]
@@ -40,7 +42,7 @@ class Worker():
 	def get_reviewer(self, req, rev):
 
 		id = str(req['id'])
-		url = 'https://bitbucket.org/api/2.0/repositories/opencast-community/matterhorn/pullrequests/%s/comments' % id
+		url = '%s/%s/comments' % (apiurl, id)
 		comments = []
 
 		while url:
@@ -96,7 +98,7 @@ class Worker():
 
 	def get_approved(self, req, rev):
 		id = str(req['id'])
-		url = 'https://bitbucket.org/api/2.0/repositories/opencast-community/matterhorn/pullrequests/%s' % id
+		url = '%s/%s' % (apiurl, id)
 
 		u = urllib2.urlopen(urllib2.Request(url))
 		try:
@@ -114,7 +116,7 @@ class Worker():
 
 	def load_reviewer(self):
 		try:
-			with open('%s/reviewers.json' % self.path, 'r') as f:
+			with open(config.REVIEWERS, 'r') as f:
 				reviewers = json.loads(f.read())
 		except:
 			return {}
@@ -123,7 +125,7 @@ class Worker():
 
 	def save_reviewer(self, reviewers):
 		try:
-			with open('%s/reviewers.json' % self.path, 'w') as f:
+			with open(config.REVIEWERS, 'w') as f:
 				f.write(json.dumps(reviewers, sort_keys=True))
 		except:
 			pass
@@ -133,7 +135,7 @@ class Worker():
 		requests = []
 		reviewers = self.load_reviewer()
 
-		nexturl = 'https://bitbucket.org/api/2.0/repositories/opencast-community/matterhorn/pullrequests?pagelen=25'
+		nexturl = '%s?pagelen=25' % apiurl
 
 		while nexturl:
 			#print 'Requesting data from %s' % nexturl
@@ -177,11 +179,11 @@ class Worker():
 		requests.sort(key=lambda r: r.get('id'))
 
 		try:
-			with open('%s/pullrequests.tmp' % self.path, 'w') as f:
+			with open('%s.tmp' % config.PULLREQUESTS, 'w') as f:
 				f.write(json.dumps(requests, sort_keys=True))
-			os.rename('%s/pullrequests.tmp' % self.path, '%s/pullrequests.json' % self.path)
+			os.rename('%s.tmp' % config.PULLREQUESTS, config.PULLREQUESTS)
 		except Exception as e:
-			sys.stderr.write('Error: Could not write pullrequests.json')
+			sys.stderr.write('Error: Could not save pullrequests')
 			sys.stderr.write(' --> %s' % e.message)
 
 		# Finally try to get the release tickets:
@@ -212,11 +214,11 @@ class Worker():
 			finally:
 				u.close()
 		try:
-			with open('%s/releasetickets.tmp' % self.path, 'w') as f:
+			with open('%s.tmp' % config.RELEASETICKETS, 'w') as f:
 				f.write(json.dumps(ticketdata, sort_keys=True))
-			os.rename('%s/releasetickets.tmp' % self.path, '%s/releasetickets.json' % self.path)
+			os.rename('%s.tmp' % config.RELEASETICKETS, config.RELEASETICKETS)
 		except Exception as e:
-			sys.stderr.write('Error: Could not write releasetickets.json')
+			sys.stderr.write('Error: Could not write releasetickets')
 			sys.stderr.write(' --> %s' % e.message)
 
 
@@ -224,7 +226,7 @@ class Worker():
 
 	def complete_db(self):
 		print 'Getting pull requests id range'
-		url = 'https://bitbucket.org/api/2.0/repositories/opencast-community/matterhorn/pullrequests?pagelen=1'
+		url = '%s?pagelen=1' % apiurl
 		u = urllib2.urlopen(urllib2.Request(url))
 		data = json.loads(u.read())
 		u.close()
@@ -244,33 +246,12 @@ class Worker():
 		self.save_reviewer(reviewers)
 
 
-
-	def server_alive(self):
-		pid = None
-		try:
-			with open('%s/bbprf.pid' % self.path) as f:
-				pid = int(f.read())
-		except:
-			pass
-		if not pid:
-			return False
-		try:
-			os.kill(pid, signal.SIG_DFL)
-		except OSError, exc:
-			if exc.errno == errno.ESRCH:
-				# The specified PID does not exist
-				return False
-		return True
-
-
 	def run(self):
 		while True:
 			try:
 				self.worker()
 			except:
 				pass
-			if not self.server_alive():
-				exit()
 			time.sleep(60)
 
 
