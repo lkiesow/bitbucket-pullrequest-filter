@@ -19,7 +19,7 @@ def home(key=None, value=None):
 		with open('pullrequests.json', 'r') as f:
 			requests = json.loads(f.read())
 	except:
-		return {}
+		pass
 
 	# Sort by id
 	requests.sort(key=lambda r: r.get('id'))
@@ -30,7 +30,7 @@ def home(key=None, value=None):
 		with open('releasetickets.json', 'r') as f:
 			releasetickets = json.loads(f.read())
 	except:
-		return {}
+		pass
 
 
 

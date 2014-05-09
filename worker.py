@@ -13,45 +13,10 @@ from daemon import runner
 import urllib2
 import json
 import os
-from pprint import pprint
 from dateutil.parser import parse
-from flask import Flask, render_template, request
-app = Flask(__name__)
 
 
-@app.route("/")
-@app.route("/<key>/<path:value>")
-def home(key=None, value=None):
-	requests = []
-	try:
-		with open('pullrequests.json', 'r') as f:
-			requests = json.loads(f.read())
-	except:
-		return {}
-
-	# Sort by id
-	requests.sort(key=lambda r: r.get('id'))
-
-	# Additional, get data for release tickets
-	releasetickets = []
-	try:
-		with open('releasetickets.json', 'r') as f:
-			releasetickets = json.loads(f.read())
-	except:
-		return {}
-
-
-
-	return render_template('home.html', requests=requests,
-			releasetickets=releasetickets, key=key, value=value)
-
-
-#############################################################################
-## Worker to regularly update the list
-#############################################################################
-
-
-def start_worker():
+def start_daemon():
 	sys.argv = [ sys.argv[0], 'start' ]
 	try:
 		daemon_runner = runner.DaemonRunner(Worker())
@@ -100,32 +65,32 @@ class Worker():
 				print 'Found reviewer for %s: %s' % (id, n)
 				rev['name'] = n
 				rev['user'] = u
-				req[u'reviewer'] = n
-				req[u'reviewer_user'] = u
+				req['reviewer'] = n
+				req['reviewer_user'] = u
 				break
 
-		if not rev.get(u'user'):
+		if not rev.get('user'):
 			rev['active'] = True
 			req['active'] = True
 			return
 
 		# Check if a pull request is active or on hold. If no //hold// can be
 		# found, it's active by default.
-		active = True
 		for c in comments[::-1]:
 			# Only the official reviewer can put a pull request on hold. Ignore
 			# all other comments.
-			if rev[u'user'] != c['user']['username']:
+			if rev['user'] != c['user']['username']:
 				continue
 			if '//resume//' in c['content']['raw']:
-				active = True
 				break
 			if '//hold//' in c['content']['raw']:
 				active = False
+				rev['active'] = False
+				req['active'] = False
 				break
 
-		rev['active'] = active
-		req['active'] = active
+		rev['active'] = True
+		req['active'] = True
 
 
 
@@ -140,9 +105,11 @@ class Worker():
 			u.close()
 
 		req['approved'] = [ p['user']['username'] for p in data['participants'] if p['approved'] ]
-		rev['approved'] = req[u'approved']
+		rev['approved'] = req['approved']
 		req['approved_by_reviewer'] = req.get('reviewer_user') in rev['approved']
-		rev['approved_by_reviewer'] = req[u'approved_by_reviewer']
+		rev['approved_by_reviewer'] = req['approved_by_reviewer']
+		if req['approved']:
+			print 'Pull Request #%s was approved by: %s' %(id, req['approved'])
 
 
 	def load_reviewer(self):
@@ -183,6 +150,7 @@ class Worker():
 		# Add reviewer
 		for req in requests:
 			rev = reviewers.get(str(req['id'])) or {}
+			req['active'] = True
 
 			if req.get('updated_on') != rev.get('last_updated'):
 				reviewers[str(req['id'])] = rev
@@ -190,15 +158,16 @@ class Worker():
 				self.get_reviewer(req, rev)
 
 			elif rev.get('name'):
-				req[u'reviewer']             = rev['name']
-				req[u'reviewer_user']        = rev['user']
+				req['reviewer']      = rev['name']
+				req['reviewer_user'] = rev['user']
+				req['active']        = rev['active']
 
 			# Update the approved state in any case
 			try:
 				self.get_approved(req, rev)
 			except:
-				req['approved']              = rev[u'approved']
-				req[u'approved_by_reviewer'] = rev[u'approved_by_reviewer']
+				req['approved']              = rev['approved']
+				req['approved_by_reviewer'] = rev['approved_by_reviewer']
 
 			req['created_on_fmt'] = parse(req['created_on']).strftime('%Y-%m-%d')
 		self.save_reviewer(reviewers)
@@ -253,21 +222,25 @@ class Worker():
 
 
 
-	def complete_db(self, last):
-		print 'Trying to fill the database'
+	def complete_db(self):
+		print 'Getting pull requests id range'
+		url = 'https://bitbucket.org/api/2.0/repositories/opencast-community/matterhorn/pullrequests?pagelen=1'
+		u = urllib2.urlopen(urllib2.Request(url))
+		data = json.loads(u.read())
+		u.close()
+		last = data['values'][0]['id']
+
+		print 'Getting data for reviews 0 to %s' % last
 		reviewers = {}
 		# Add reviewer
-		for i in xrange(last):
+		for i in xrange(int(last)):
 			if not i:
 				continue
-			print '\r#%i' % i,
-			sys.stdout.flush()
 			rev = {}
 			req = { 'id' : i }
 			reviewers[str(req['id'])] = rev
 			self.get_reviewer(req, rev)
 			self.get_approved(req, rev)
-		print ''
 		self.save_reviewer(reviewers)
 
 
@@ -301,19 +274,14 @@ class Worker():
 			time.sleep(60)
 
 
-# Make sure to spawn a worker
-if sys.argv[1:] == []:
-	os.system('python %s worker' % os.path.abspath(__file__))
-	#os.spawnl(os.P_NOWAIT, 'python', [os.path.abspath(__file__), 'worker'])
-
 if __name__ == "__main__":
 	if sys.argv[1:] == ['complete-db']:
 		w = Worker()
-		w.complete_db(177)
+		w.complete_db()
 		exit()
-	if sys.argv[1:] == ['worker']:
-		start_worker()
+	if sys.argv[1:] == ['daemon']:
+		start_daemon()
 	else:
-		with open('bbprf.pid', 'w') as f:
-			f.write('%s' % os.getpid())
-		app.run(debug=True)
+		w = Worker()
+		w.worker()
+		exit()
