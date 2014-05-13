@@ -231,6 +231,7 @@ class Worker():
 		data = json.loads(u.read())
 		u.close()
 		last = data['values'][0]['id']
+		last = 217
 
 		print 'Getting data for reviews 0 to %s' % last
 		reviewers = {}
