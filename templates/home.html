@@ -41,8 +41,9 @@
 				<th class="sort" data-sort="created_on"    >Created ▲▼</th>
 				<th class="sort" data-sort="author"        >Author ▲▼</th>
 				<th class="sort" data-sort="title"         >Title ▲▼</th>
-				<th class="sort" data-sort="source_repo"   >Source (Repository) ▲▼</th>
-				<th class="sort" data-sort="source_branch" >Source (Branch) ▲▼</th>
+				<th class=ellipsis />
+				<th class="sort hide" data-sort="source_repo"   >Source (Repository) ▲▼</th>
+				<th class="sort hide" data-sort="source_branch" >Source (Branch) ▲▼</th>
 				<th class="sort" data-sort="dest_branch"   >Destination ▲▼</th>
 				<th class="sort" data-sort="reviewer"      >Reviewer ▲▼</th>
 			</tr>
@@ -52,8 +53,9 @@
 				<th><input id="search-created_on"    placeholder="Search for creation date" size=7  /></th>
 				<th><input id="search-author"        placeholder="Search for author"        size=11 /></th>
 				<th><input id="search-title"         placeholder="Search for title"         size=35 /></th>
-				<th><input id="search-source_repo"   placeholder="Search for source-repo"   size=20 /></th>
-				<th><input id="search-source_branch" placeholder="Search for source-branch" size=20 /></th>
+				<th class=ellipsis />
+				<th class=hide><input id="search-source_repo"   placeholder="Search for source-repo"   size=20 /></th>
+				<th class=hide><input id="search-source_branch" placeholder="Search for source-branch" size=20 /></th>
 				<th><input id="search-dest_branch"   placeholder="Search for dest-branch"   size=8  /></th>
 				<th><input id="search-reviewer"      placeholder="Search for reviewer"      size=10 /></th>
 			</tr>
@@ -72,8 +74,9 @@
 				<td class=created_on><span title="{{ r['created_on'] }}">{{ r['created_on_fmt'] }}</span></a></td>
 				<td class=author title="{{ r['author']['username'] }}">{{ r['author'].get('display_name') }}</td>
 				<td class=title><a title="Go to pull request" href={{ r['links']['html']['href'] }}>{{ r['title']|truncate(60, False, '…') }}</a></td>
-				<td class=source_repo>{{ r['source']['repository']['full_name']|truncate(29, True, '…') }}</td>
-				<td class=source_branch>{{ r['source']['branch']['name']|truncate(30, True, '…') }}</td>
+				<td class=ellipsis>⋮</td>
+				<td class="source_repo hide">{{ r['source']['repository']['full_name']|truncate(29, True, '…') }}</td>
+				<td class="source_branch hide">{{ r['source']['branch']['name']|truncate(30, True, '…') }}</td>
 				<td class=dest_branch><a title="Filter by branch"
 						href='#' onclick="branchfilter('{{ r['destination']['branch']['name'] }}');"
 						>{{ r['destination']['branch']['name'] }}</a></td>

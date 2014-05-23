@@ -102,3 +102,12 @@ footer {
 .hold * {
 	color: gray;
 }
+
+.hide {
+	display: none;
+}
+
+.ellipsis {
+	cursor: pointer;
+	border-radius: 3px;
+}

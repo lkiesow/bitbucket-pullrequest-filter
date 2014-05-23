@@ -22,6 +22,13 @@ $(document).ready(function() {
 		$(this).parent().append('<a onclick="cleanup(this);" class=clean>×</a>');
 	});
 
+	$('.ellipsis').each(function() {
+		$(this).click(function() {
+			$('.ellipsis').hide();
+			$('.hide').show();
+		});
+	});
+
 })
 
 function cleanup(e) {
