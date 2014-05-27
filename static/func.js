@@ -7,7 +7,7 @@ $(document).ready(function() {
 
 	for (var k in options['valueNames']) {
 		var v = options['valueNames'][k];
-		$('#search-' + v).keyup(function(e) {
+		var filter = function(e) {
 			var v = e.target.id.replace(/^search-/, '');
 			var s = $(e.target).val().toLowerCase();
 			current_filter = s ? v + '/' + s : '';
@@ -15,7 +15,9 @@ $(document).ready(function() {
 				return item.values()[v].toLowerCase().indexOf(s) >= 0;
 			});
 			return false;
-		});
+		};
+		$('#search-' + v).change(filter);
+		$('#search-' + v).keyup(filter);
 	}
 
 	$('input').each(function() {
