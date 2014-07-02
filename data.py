@@ -22,8 +22,11 @@ class Base:
 
 
 	def data(self):
-		return { a:getattr(self, a) for a in dir(self)
-				if not a.startswith('_') and not callable(getattr(self, a)) }
+		data = {}
+		for a in dir(self):
+			if not a.startswith('_') and not callable(getattr(self, a)):
+				data[a] = getattr(self, a)
+		return data
 
 
 	def json(self):
