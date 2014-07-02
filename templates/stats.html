@@ -1,0 +1,27 @@
+{% extends "layout.html" %}
+{% block body %}
+<h2 style="text-align: center;">Opencast Matterhorn: Review Stats</h2>
+<div id="pull-requests">
+
+
+	<table class=stats>
+		<thead>
+			<tr>
+				<th>Reviewer</th>
+				<th>Count</th>
+				<th>Reviewed Pull Requests</th>
+			</tr>
+		</thead>
+		<tbody>
+			{% for s in stats %}
+			<tr>
+				<td>{{ s[0] }}</td>
+				<td>{{ s[1] }}</td>
+				<td class=pr>{{ s[2] }}</td>
+			</tr>
+			{% endfor %}
+		</tbody>
+	</table>
+
+</div>
+{% endblock %}

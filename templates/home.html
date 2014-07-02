@@ -22,12 +22,12 @@
 			</tr>
 		</thead>
 		<tbody>
-			{% for r in releasetickets %}
-			<tr {{ 'style=color:red;' if r['since-last-change'] >= 2 else '' | safe }}>
-				<td><a href="{{ r['url'] }}">{{ r['version'] }}</a></td>
-				<td>{{ r['assignee'] }}</td>
-				<td>{{ r['last-changed'] }}</td>
-				<td>≥ {{ r['since-last-change'] }} days</td>
+			{% for rt in releasetickets %}
+			<tr {{ 'style=color:red;' if rt.merge_duration(0) >= 2 else '' | safe }}>
+				<td><a href="{{ rt.url }}">{{ rt.version }}</a></td>
+				<td>{{ rt.assignee }}</td>
+				<td>{{ rt.last_changed }}</td>
+				<td>≥ {{ rt.merge_duration(0) }} days</td>
 			</tr>
 			{% endfor %}
 		</tbody>
@@ -61,26 +61,28 @@
 			</tr>
 		</thead>
 		<tbody class=list>
-			{% for r in requests %}
-			<tr {{ '' if r.get('active') else 'class=hold' }}>
-				{% if r['approved_by_reviewer'] %}
+			{% for pr in requests %}
+			<tr {{ '' if pr.active else 'class=hold' }}>
+				{% if pr.approved_by_reviewer %}
 				<td class=appr_r title="Approved by official reviewer">✔</td>
-				{% elif r['approved'] %}
+				{% elif pr.approved_by %}
 				<td class=appr_o title="Approved by non-official reviewer">✔</td>
 				{% else %}
 				<td></td>
 				{% endif %}
-				<td class=id><a title="Go to pull request" href={{ r['links']['html']['href'] }}>#{{ r['id'] }}</a></td>
-				<td class=created_on><span title="{{ r['created_on'] }}">{{ r['created_on_fmt'] }}</span></a></td>
-				<td class=author title="{{ r['author']['username'] }}">{{ r['author'].get('display_name') }}</td>
-				<td class=title><a title="Go to pull request" href={{ r['links']['html']['href'] }}>{{ r['title']|truncate(60, False, '…') }}</a></td>
+				<td class=id><a title="Go to pull request" href={{ pr.url }}>#{{ pr.id }}</a></td>
+				<td class=created_on><span title="{{ pr.created }}">{{ pr.created_date }}</span></a></td>
+				<td class=author title="{{ pr.author_user }}">{{ pr.author_name }}</td>
+				<td class=title><a title="Go to pull request" href={{ pr.url }}>{{ pr.title|truncate(60, False, '…') }}</a></td>
 				<td class=ellipsis>⋮</td>
-				<td class="source_repo hide">{{ r['source']['repository']['full_name']|truncate(29, True, '…') }}</td>
-				<td class="source_branch hide">{{ r['source']['branch']['name']|truncate(30, True, '…') }}</td>
-				<td class=dest_branch><a title="Filter by branch"
-						href='#' onclick="branchfilter('{{ r['destination']['branch']['name'] }}');"
-						>{{ r['destination']['branch']['name'] }}</a></td>
-				<td class=reviewer>{{ r.get('reviewer') or '' }}</td>
+				<td class="source_repo hide">{{ pr.source_repo or ''|truncate(29, True, '…') }}</td>
+				<td class="source_branch hide">{{ pr.source_branch|truncate(30, True, '…') }}</td>
+				<td class=dest_branch><a title="Filter by branch" href='#'
+						onclick="branchfilter('{{ pr.destination }}');">{{ pr.destination }}</a></td>
+				{% if pr.reviewer_name %}
+				<td class=reviewer>{{ pr.reviewer_name or '' }}
+					<i title="Days since the review was assigned">({{ pr.review_duration() }})</i></td>
+				{% endif %}
 			</tr>
 			{% endfor %}
 		</tbody>

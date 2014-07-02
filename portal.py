@@ -9,35 +9,48 @@ sys.setdefaultencoding('utf8')
 import config
 
 import json
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, Response
 app = Flask(__name__)
+
+import redis
+from data import PullRequest, ReleaseTicket
+r = redis.StrictRedis(host='localhost', db=0)
 
 
 @app.route("/")
 @app.route("/<key>/<path:value>")
 def home(key=None, value=None):
-	requests = []
-	try:
-		with open(config.PULLREQUESTS, 'r') as f:
-			requests = json.loads(f.read())
-	except:
-		pass
 
-	# Sort by id
-	requests.sort(key=lambda r: r.get('id'))
+	requests = [ PullRequest(r.get(k)) for k in r.keys('pr_*') ]
+	requests.sort(key=lambda pr: pr.id)
 
 	# Additional, get data for release tickets
-	releasetickets = []
-	try:
-		with open(config.RELEASETICKETS, 'r') as f:
-			releasetickets = json.loads(f.read())
-	except:
-		pass
-
-
+	releasetickets = [ ReleaseTicket(r.get(k)) for k in r.keys('ticket_*') ]
 
 	return render_template('home.html', requests=requests,
 			releasetickets=releasetickets, key=key, value=value)
+
+
+@app.route('/stats')
+def stats():
+	auth = (request.authorization.username, request.authorization.password) \
+			if request.authorization else None
+	if auth != ('admin', 'opencast'):
+		return Response('', 401,
+				{'WWW-Authenticate': 'Basic realm="Login Required"'})
+	stats = {}
+	for k in r.keys('*pr_*'):
+		pr = PullRequest(r.get(k))
+		if not pr.reviewer_user:
+			continue
+		stats[pr.reviewer_user] = stats.get(pr.reviewer_user, []) + [pr.id]
+
+	stats = [ (k,len(v),[int(x) for x in v]) for k,v in stats.iteritems() ]
+
+	# Sort by number of reviews
+	stats.sort(key=lambda r: r[1])
+
+	return render_template('stats.html', stats=stats)
 
 
 if __name__ == "__main__":

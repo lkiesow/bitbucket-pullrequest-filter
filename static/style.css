@@ -111,3 +111,15 @@ footer {
 	cursor: pointer;
 	border-radius: 3px;
 }
+
+.reviewer i {
+	font-size: smaller;
+}
+
+.stats {
+	margin: 30px auto;
+}
+
+.stats td.pr {
+	font-size: smaller;
+}

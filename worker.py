@@ -15,6 +15,10 @@ import json
 import os
 from dateutil.parser import parse
 import config
+import redis
+from data import PullRequest, ReleaseTicket
+
+r = redis.StrictRedis(host='localhost', db=0)
 
 apiurl = 'https://bitbucket.org/api/2.0/repositories/%s/pullrequests' % config.REPOSITORY
 
@@ -39,10 +43,9 @@ class Worker():
 		self.pidfile_timeout = 0
 
 
-	def get_reviewer(self, req, rev):
+	def get_reviewer(self, pr):
 
-		id = str(req['id'])
-		url = '%s/%s/comments' % (apiurl, id)
+		url = '%s/%s/comments' % (apiurl, pr.id)
 		comments = []
 
 		while url:
@@ -55,50 +58,77 @@ class Worker():
 				u.close()
 
 		# Make sure revies are sorted by date
-		comments = data.get('values') or []
 		comments.sort(key=lambda r: r.get('created_on'))
+
+		pr.reviewer_name = None
+		pr.reviewer_user = None
 
 		# Start with last comment to get the last person taking up the job as
 		# reviewer
 		for c in comments[::-1]:
 			if '//review//' in c['content']['raw']:
-				n = c['user']['display_name']
-				u = c['user']['username']
-				print 'Found reviewer for %s: %s' % (id, n)
-				rev['name'] = n
-				rev['user'] = u
-				req['reviewer'] = n
-				req['reviewer_user'] = u
+				pr.reviewer_name = c['user']['display_name']
+				pr.reviewer_user = c['user']['username']
+				pr.review_start  = c['updated_on']
+				print 'Found reviewer for %s: %s' % (pr.id, pr.reviewer_name)
 				break
 
-		if not rev.get('user'):
-			rev['active'] = True
-			req['active'] = True
+		pr.active = True
+
+		# We can stop here if there is no reviewer
+		if not pr.reviewer_user:
+			print 'Found no reviewer for %s' % pr.id
 			return
 
 		# Check if a pull request is active or on hold. If no //hold// can be
 		# found, it's active by default.
 		for c in comments[::-1]:
-			# Only the official reviewer can put a pull request on hold. Ignore
-			# all other comments.
-			if rev['user'] != c['user']['username']:
+			# Only the official reviewer can put a pull request on hold. Skip all
+			# other comments.
+			if pr.reviewer_user != c['user']['username']:
 				continue
 			if '//resume//' in c['content']['raw']:
 				break
 			if '//hold//' in c['content']['raw']:
-				active = False
-				rev['active'] = False
-				req['active'] = False
+				pr.active = False
 				break
 
-		rev['active'] = True
-		req['active'] = True
+
+	def update_pullrequest(self, req):
+		pr = PullRequest(r.get('pr_%s' % req['id']))
+
+		pr.author_name          = req['author'].get('display_name')
+		pr.author_user          = req['author']['username']
+		pr.created_date         = parse(req['created_on']).strftime('%Y-%m-%d')
+		pr.created              = req['created_on']
+		pr.destination          = req['destination']['branch']['name']
+		pr.id                   = req['id']
+		pr.source_branch        = req['source']['branch']['name']
+		pr.source_repo          = (req['source'].get('repository') or {}).get('full_name')
+		pr.title                = req['title']
+		pr.url                  = req['links']['html']['href']
+		pr.state                = req['state'].lower()
+
+		# Check for reviewer if the pr was updated since last time
+		if pr.last_updated != req.get('updated_on'):
+			pr.last_updated = req.get('updated_on')
+			self.get_reviewer(pr)
+
+		# Update the approved state in any case
+		try:
+			self.get_approved(pr)
+		except:
+			pass
+
+		# Store it in the redis db
+		if pr.state == 'open':
+			r.set('pr_%s' % pr.id, pr.json())
+		else:
+			r.set('done_pr_%s' % pr.id, pr.json())
 
 
-
-	def get_approved(self, req, rev):
-		id = str(req['id'])
-		url = '%s/%s' % (apiurl, id)
+	def get_approved(self, pr):
+		url = '%s/%s' % (apiurl, pr.id)
 
 		u = urllib2.urlopen(urllib2.Request(url))
 		try:
@@ -106,34 +136,14 @@ class Worker():
 		finally:
 			u.close()
 
-		req['approved'] = [ p['user']['username'] for p in data['participants'] if p['approved'] ]
-		rev['approved'] = req['approved']
-		req['approved_by_reviewer'] = req.get('reviewer_user') in rev['approved']
-		rev['approved_by_reviewer'] = req['approved_by_reviewer']
-		if req['approved']:
-			print 'Pull Request #%s was approved by: %s' %(id, req['approved'])
-
-
-	def load_reviewer(self):
-		try:
-			with open(config.REVIEWERS, 'r') as f:
-				reviewers = json.loads(f.read())
-		except:
-			return {}
-		return reviewers
-
-
-	def save_reviewer(self, reviewers):
-		try:
-			with open(config.REVIEWERS, 'w') as f:
-				f.write(json.dumps(reviewers, sort_keys=True))
-		except:
-			pass
+		pr.approved_by = [ p['user']['username'] for p in data['participants'] if p['approved'] ]
+		pr.approved_by_reviewer = pr.reviewer_user in pr.approved_by
+		if pr.approved_by:
+			print 'Pull Request #%s was approved by: %s' %(pr.id, pr.approved_by)
 
 
 	def worker(self):
 		requests = []
-		reviewers = self.load_reviewer()
 
 		nexturl = '%s?pagelen=25' % apiurl
 
@@ -149,46 +159,25 @@ class Worker():
 				sys.stderr.write('Error: Could not get list of pull requests')
 				sys.stderr.write(' --> %s' % e.message)
 
+		# Get active pull requests from database
+		active_pr = set(r.keys('pr_*'))
+
 		# Add reviewer
 		for req in requests:
-			rev = reviewers.get(str(req['id'])) or {}
-			req['active'] = True
-
-			if req.get('updated_on') != rev.get('last_updated'):
-				reviewers[str(req['id'])] = rev
-				rev['last_updated'] = req.get('updated_on')
-				self.get_reviewer(req, rev)
-
-			elif rev.get('name'):
-				req['reviewer']      = rev['name']
-				req['reviewer_user'] = rev['user']
-				req['active']        = rev['active']
-
-			# Update the approved state in any case
+			self.update_pullrequest(req)
+			# Remove still active PR from list
 			try:
-				self.get_approved(req, rev)
+				active_pr.remove('pr_%s' % req['id'])
 			except:
-				req['approved']              = rev['approved']
-				req['approved_by_reviewer'] = rev['approved_by_reviewer']
+				pass
 
-			req['created_on_fmt'] = parse(req['created_on']).strftime('%Y-%m-%d')
-		self.save_reviewer(reviewers)
+		# Set old PRs to inactive
+		for key in active_pr:
+			r.rename(key, 'done_%s' % key)
 
-
-		# Sort by id
-		requests.sort(key=lambda r: r.get('id'))
-
-		try:
-			with open('%s.tmp' % config.PULLREQUESTS, 'w') as f:
-				f.write(json.dumps(requests, sort_keys=True))
-			os.rename('%s.tmp' % config.PULLREQUESTS, config.PULLREQUESTS)
-		except Exception as e:
-			sys.stderr.write('Error: Could not save pullrequests')
-			sys.stderr.write(' --> %s' % e.message)
 
 		# Finally try to get the release tickets:
 		releasetickets = [10049, 10125]
-		ticketdata = []
 		for t in releasetickets:
 			nexturl = 'https://opencast.jira.com/rest/api/2/issue/MH-%i?expand=changelog' % t
 			u = urllib2.urlopen(urllib2.Request(nexturl))
@@ -201,49 +190,33 @@ class Worker():
 						lastchanged = h['created']
 						break
 				data = data['fields']
-				ticketdata.append({
-					'url'               : 'https://opencast.jira.com/browse/MH-%i' % t,
-					'version'           : data['fixVersions'][0]['name'] if data['fixVersions'] else '',
-					'last-changed'      : parse(lastchanged).strftime('%Y-%m-%d %H:%M:%S'),
-					'since-last-change' : (datetime.datetime.now(pytz.utc) - parse(lastchanged)).days,
-					'assignee'          : data['assignee'].get('displayName') if data.get('assignee') else ''
-					})
+				rt = ReleaseTicket(
+						url='https://opencast.jira.com/browse/MH-%i' % t,
+						version=data['fixVersions'][0]['name'] if data['fixVersions'] else '',
+						last_changed=lastchanged,
+						assignee=data['assignee'].get('displayName') if data.get('assignee') else ''
+					)
+				r.set('ticket_%s' % t, rt.json())
 			except Exception as e:
 				sys.stderr.write('Error: Could not get release ticket (MH-%s)' % t)
 				sys.stderr.write(' --> %s' % e.message)
 			finally:
 				u.close()
-		try:
-			with open('%s.tmp' % config.RELEASETICKETS, 'w') as f:
-				f.write(json.dumps(ticketdata, sort_keys=True))
-			os.rename('%s.tmp' % config.RELEASETICKETS, config.RELEASETICKETS)
-		except Exception as e:
-			sys.stderr.write('Error: Could not write releasetickets')
-			sys.stderr.write(' --> %s' % e.message)
-
 
 
 
 	def complete_db(self):
-		print 'Getting pull requests id range'
-		url = '%s?pagelen=1' % apiurl
-		u = urllib2.urlopen(urllib2.Request(url))
-		data = json.loads(u.read())
-		u.close()
-		last = data['values'][0]['id']
-
-		print 'Getting data for reviews 0 to %s' % last
-		reviewers = {}
-		# Add reviewer
-		for i in xrange(int(last)):
-			if not i:
-				continue
-			rev = {}
-			req = { 'id' : i }
-			reviewers[str(req['id'])] = rev
-			self.get_reviewer(req, rev)
-			self.get_approved(req, rev)
-		self.save_reviewer(reviewers)
+		i = 1
+		try:
+			while True:
+				print 'Pull Request #%i' % i
+				u = urllib2.urlopen(urllib2.Request('%s/%s' % (apiurl, i)))
+				req = json.loads(u.read())
+				u.close()
+				self.update_pullrequest(req)
+				i += 1
+		except:
+			pass
 
 
 	def run(self):
