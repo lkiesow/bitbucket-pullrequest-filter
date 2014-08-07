@@ -39,16 +39,19 @@ def stats():
 		return Response('', 401,
 				{'WWW-Authenticate': 'Basic realm="Login Required"'})
 	stats = {}
+	user = {}
 	for k in r.keys('*pr_*'):
 		pr = PullRequest(r.get(k))
 		if not pr.reviewer_user:
 			continue
+		if pr.reviewer_name:
+			user[pr.reviewer_user] = pr.reviewer_name
 		stats[pr.reviewer_user] = stats.get(pr.reviewer_user, []) + [pr.id]
 
-	stats = [ (k,len(v),[int(x) for x in v]) for k,v in stats.iteritems() ]
+	stats = [ (k, user.get(k,k), len(v), [int(x) for x in v]) for k,v in stats.iteritems() ]
 
 	# Sort by number of reviews
-	stats.sort(key=lambda r: r[1])
+	stats.sort(key=lambda r: r[2])
 
 	return render_template('stats.html', stats=stats)
 
