@@ -9,6 +9,9 @@ sys.setdefaultencoding('utf8')
 import config
 
 import json
+from dateutil.parser import parse
+from datetime import date
+from dateutil.relativedelta import relativedelta
 from flask import Flask, render_template, request, Response
 app = Flask(__name__)
 
@@ -32,17 +35,22 @@ def home(key=None, value=None):
 
 
 @app.route('/stats')
-def stats():
+@app.route('/stats/<int:month>')
+def stats(month=0):
 	auth = (request.authorization.username, request.authorization.password) \
 			if request.authorization else None
 	if auth != ('admin', 'opencast'):
 		return Response('', 401,
 				{'WWW-Authenticate': 'Basic realm="Login Required"'})
+	# Get time barrier
+	timebarrier = date.today() + relativedelta( months = -month )
 	stats = {}
 	user = {}
 	for k in r.keys('*pr_*'):
 		pr = PullRequest(r.get(k))
 		if not pr.reviewer_user:
+			continue
+		if month and timebarrier > parse(pr.last_updated).date():
 			continue
 		if pr.reviewer_name:
 			user[pr.reviewer_user] = pr.reviewer_name
