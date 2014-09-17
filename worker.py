@@ -94,7 +94,7 @@ class Worker():
 				break
 
 
-	def update_pullrequest(self, req):
+	def update_pullrequest(self, req, force=False):
 		pr = PullRequest(r.get('pr_%s' % req['id']))
 
 		pr.author_name          = req['author'].get('display_name')
@@ -110,7 +110,7 @@ class Worker():
 		pr.state                = req['state'].lower()
 
 		# Check for reviewer if the pr was updated since last time
-		if pr.last_updated != req.get('updated_on'):
+		if force or pr.last_updated != req.get('updated_on'):
 			pr.last_updated = req.get('updated_on')
 			self.get_reviewer(pr)
 
@@ -204,16 +204,19 @@ class Worker():
 				u.close()
 
 
+	def update_pullrequest_id(self, i, force=False):
+		u = urllib2.urlopen(urllib2.Request('%s/%s' % (apiurl, i)))
+		req = json.loads(u.read())
+		u.close()
+		self.update_pullrequest(req, force)
+
 
 	def complete_db(self):
 		i = 1
 		try:
 			while True:
 				print 'Pull Request #%i' % i
-				u = urllib2.urlopen(urllib2.Request('%s/%s' % (apiurl, i)))
-				req = json.loads(u.read())
-				u.close()
-				self.update_pullrequest(req)
+				self.update_pullrequest_id(i)
 				i += 1
 		except:
 			pass
@@ -237,5 +240,8 @@ if __name__ == "__main__":
 		start_daemon()
 	else:
 		w = Worker()
-		w.worker()
+		try:
+			w.update_pullrequest_id(int(sys.argv[1]), True)
+		except:
+			w.worker()
 		exit()
