@@ -62,13 +62,15 @@
 		</thead>
 		<tbody class=list>
 			{% for pr in requests %}
-			<tr {{ '' if pr.active else 'class=hold' }}>
-				{% if pr.approved_by_reviewer %}
+			<tr class="{{ '' if pr.active else 'hold' }}">
+				{% if pr.state == 'open' and pr.approved_by_reviewer %}
 				<td class=appr_r title="Approved by official reviewer">✔</td>
-				{% elif pr.approved_by %}
+				{% elif pr.state == 'open' and pr.approved_by %}
 				<td class=appr_o title="Approved by non-official reviewer">✔</td>
-				{% else %}
+				{% elif pr.state == 'open' %}
 				<td></td>
+				{% else %}
+				<td class="{{ pr.state }}" title="{{ pr.state }}">{{ pr.state[:1].upper() }}</td>
 				{% endif %}
 				<td class=id><a title="Go to pull request" href={{ pr.url }}>#{{ pr.id }}</a></td>
 				<td class=created_on><span title="{{ pr.created }}">{{ pr.created_date }}</span></a></td>
@@ -78,7 +80,7 @@
 				<td class="source_repo hide">{{ pr.source_repo or ''|truncate(29, True, '…') }}</td>
 				<td class="source_branch hide">{{ pr.source_branch|truncate(30, True, '…') }}</td>
 				<td class=dest_branch><a title="Filter by branch" href='#'
-						onclick="branchfilter('{{ pr.destination }}');">{{ pr.destination }}</a></td>
+						onclick="branchfilter('{{ pr.destination }}');">{{ pr.destination|truncate(12, True, '…') }}</a></td>
 				{% if pr.reviewer_name %}
 				<td class=reviewer>{{ pr.reviewer_name or '' }}
 					<i title="Days since the review was assigned">({{ pr.review_duration() }})</i></td>

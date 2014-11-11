@@ -1,6 +1,7 @@
 current_filter = '';
 $(document).ready(function() {
 	options = {
+		page: 10000,
 		valueNames: [ 'id', 'created_on', 'author', 'title', 'source_repo', 'source_branch', 'dest_branch', 'reviewer' ]
 	};
 	var list = new List('pull-requests', options);

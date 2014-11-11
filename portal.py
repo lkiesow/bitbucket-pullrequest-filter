@@ -29,6 +29,24 @@ def home(key=None, value=None):
 
 	# Additional, get data for release tickets
 	releasetickets = [ ReleaseTicket(r.get(k)) for k in r.keys('ticket_*') ]
+	releasetickets.sort(key=lambda rt: rt.version, reverse=True)
+
+	return render_template('home.html', requests=requests,
+			releasetickets=releasetickets, key=key, value=value)
+
+
+@app.route("/all/")
+@app.route("/all/<key>/<path:value>")
+def all(key=None, value=None):
+
+	requests = [ PullRequest(r.get(k)) for k in r.keys('*pr_*') ]
+	requests.sort(key=lambda pr: -pr.id)
+
+	print(len(requests))
+
+	# Additional, get data for release tickets
+	releasetickets = [ ReleaseTicket(r.get(k)) for k in r.keys('ticket_*') ]
+	releasetickets.sort(key=lambda rt: rt.version, reverse=True)
 
 	return render_template('home.html', requests=requests,
 			releasetickets=releasetickets, key=key, value=value)

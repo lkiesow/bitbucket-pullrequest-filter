@@ -103,6 +103,14 @@ footer {
 	color: gray;
 }
 
+td.merged {
+	color: green;
+}
+
+td.declined {
+	color: red;
+}
+
 .hide {
 	display: none;
 }
