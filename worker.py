@@ -177,7 +177,7 @@ class Worker():
 
 
 		# Finally try to get the release tickets:
-		releasetickets = [10049, 10125, 10472]
+		releasetickets = [10049, 10125, 10472, 10739]
 		for t in releasetickets:
 			nexturl = 'https://opencast.jira.com/rest/api/2/issue/MH-%i?expand=changelog' % t
 			u = urllib2.urlopen(urllib2.Request(nexturl))
