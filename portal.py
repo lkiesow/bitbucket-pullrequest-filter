@@ -23,9 +23,20 @@ except AttributeError:
 	r = redis.Redis(host='localhost', db=0)
 
 
+def filters(filterval):
+	filters = {}
+	filterval = filterval.replace('//', '~~~~~~~~~~~~~~~~~~~~~~~').split('/')
+	if len(filterval) % 2 == 0:
+		filterval = [ c.replace('~~~~~~~~~~~~~~~~~~~~~~~', '/') for c in filterval ]
+		while filterval:
+			filters[filterval[0]] = filterval[1]
+			filterval = filterval[2:]
+	return filters
+
+
 @app.route("/")
-@app.route("/<key>/<path:value>")
-def home(key=None, value=None):
+@app.route("/<path:filterval>")
+def home(filterval=''):
 
 	requests = [ PullRequest(r.get(k)) for k in r.keys('pr_*') ]
 	requests.sort(key=lambda pr: pr.id)
@@ -35,12 +46,12 @@ def home(key=None, value=None):
 	releasetickets.sort(key=lambda rt: rt.version, reverse=True)
 
 	return render_template('home.html', requests=requests,
-			releasetickets=releasetickets, key=key, value=value)
+			releasetickets=releasetickets, filters=filters(filterval))
 
 
 @app.route("/all")
-@app.route("/all/<key>/<path:value>")
-def all(key=None, value=None):
+@app.route("/all/<path:filterval>")
+def all(filterval=''):
 
 	requests = [ PullRequest(r.get(k)) for k in r.keys('*pr_*') ]
 	requests.sort(key=lambda pr: -pr.id)
@@ -52,7 +63,7 @@ def all(key=None, value=None):
 	releasetickets.sort(key=lambda rt: rt.version, reverse=True)
 
 	return render_template('home.html', requests=requests,
-			releasetickets=releasetickets, key=key, value=value)
+			releasetickets=releasetickets, filters=filters(filterval))
 
 
 @app.route('/stats')

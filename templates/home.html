@@ -9,7 +9,7 @@
 
 	<div style="padding: 30px; text-align: center;">
 		Global Search:
-		<input class="search" placeholder="Global search" />
+		<input id=search placeholder="Global search" value="{{ filters.get('global', '') }}" />
 	</div>
 
 	<table class=releasetickets>
@@ -49,15 +49,15 @@
 			</tr>
 			<tr>
 				<th></th>
-				<th><input id="search-id"            placeholder="Search for ID"            size=3  /></th>
-				<th><input id="search-created_on"    placeholder="Search for creation date" size=7  /></th>
-				<th><input id="search-author"        placeholder="Search for author"        size=11 /></th>
-				<th><input id="search-title"         placeholder="Search for title"         size=35 /></th>
+				<th><input id="search-id"            placeholder="Search for ID"            size=3  value="{{ filters.get('id', '') }}" /></th>
+				<th><input id="search-created_on"    placeholder="Search for creation date" size=7  value="{{ filters.get('created_on', '') }}" /></th>
+				<th><input id="search-author"        placeholder="Search for author"        size=11 value="{{ filters.get('author', '') }}" /></th>
+				<th><input id="search-title"         placeholder="Search for title"         size=35 value="{{ filters.get('title', '') }}" /></th>
 				<th class=ellipsis />
-				<th class=hide><input id="search-source_repo"   placeholder="Search for source-repo"   size=20 /></th>
-				<th class=hide><input id="search-source_branch" placeholder="Search for source-branch" size=20 /></th>
-				<th><input id="search-dest_branch"   placeholder="Search for dest-branch"   size=8  /></th>
-				<th><input id="search-reviewer"      placeholder="Search for reviewer"      size=10 /></th>
+				<th class=hide><input id="search-source_repo"   placeholder="Search for source-repo"   size=20 value="{{ filters.get('source_repo', '') }}" /></th>
+				<th class=hide><input id="search-source_branch" placeholder="Search for source-branch" size=20 value="{{ filters.get('source_branch', '') }}" /></th>
+				<th><input id="search-dest_branch"   placeholder="Search for dest-branch"   size=8 value="{{ filters.get('dest_branch', '') }}" /></th>
+				<th><input id="search-reviewer"      placeholder="Search for reviewer"      size=10 value="{{ filters.get('reviewer', '') }}" /></th>
 			</tr>
 		</thead>
 		<tbody class=list>

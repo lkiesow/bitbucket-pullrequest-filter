@@ -1,24 +1,43 @@
 current_filter = '';
-$(document).ready(function() {
-	options = {
-		page: 10000,
-		valueNames: [ 'id', 'created_on', 'author', 'title', 'source_repo', 'source_branch', 'dest_branch', 'reviewer' ]
-	};
-	var list = new List('pull-requests', options);
 
-	for (var k in options['valueNames']) {
-		var v = options['valueNames'][k];
-		var filter = function(e) {
-			var v = e.target.id.replace(/^search-/, '');
-			var s = $(e.target).val().toLowerCase();
-			current_filter = s ? v + '/' + s : '';
-			list.filter(function(item) {
-				return item.values()[v].toLowerCase().indexOf(s) >= 0;
-			});
-			return false;
-		};
-		$('#search-' + v).change(filter);
-		$('#search-' + v).keyup(filter);
+filter = {};
+keys = [ 'id', 'created_on', 'author', 'title', 'source_repo', 'source_branch', 'dest_branch', 'reviewer' ];
+
+function filterTable() {
+	for (var k in keys) {
+		var v = keys[k];
+		filter[v] = $('#search-' + v).val().toLowerCase();
+	}
+	filter['global'] = $('#search').val().toLowerCase();
+	$('.list tr').each(function(i, row) {
+		for (var k in keys) {
+			var v = keys[k];
+			if (!filter[v]) {
+				$(row).show();
+				continue;
+			}
+			var cell = $(row).find('td.' + v).text().toLowerCase();
+			if (cell.indexOf(filter[v]) < 0) {
+				$(row).hide();
+				break;
+			} else {
+				$(row).show();
+			}
+		}
+		if ($(row).text().toLowerCase().indexOf(filter['global']) < 0) {
+			$(row).hide();
+		}
+	})
+}
+
+$(document).ready(function() {
+
+		$('#search').change(filterTable);
+		$('#search').keyup(filterTable);
+	for (var k in keys) {
+		var v = keys[k];
+		$('#search-' + v).change(filterTable);
+		$('#search-' + v).keyup(filterTable);
 	}
 
 	$('input').each(function() {
@@ -31,6 +50,8 @@ $(document).ready(function() {
 			$('.hide').show();
 		});
 	});
+
+	filterTable();
 
 })
 
@@ -46,5 +67,11 @@ function branchfilter(branch) {
 }
 
 function bookmark() {
-	window.location.href = "/" + current_filter;
+	var current_filter = '';
+	for (var k in filter) {
+		if (filter[k]) {
+			current_filter += '/' + k + '/' + filter[k].replace('/', '//');
+		}
+	}
+	window.location.href = current_filter;
 }
