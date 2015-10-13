@@ -17,7 +17,10 @@ app = Flask(__name__)
 
 import redis
 from data import PullRequest, ReleaseTicket
-r = redis.StrictRedis(host='localhost', db=0)
+try:
+	r = redis.StrictRedis(host='localhost', db=0)
+except AttributeError:
+	r = redis.Redis(host='localhost', db=0)
 
 
 @app.route("/")
@@ -35,7 +38,7 @@ def home(key=None, value=None):
 			releasetickets=releasetickets, key=key, value=value)
 
 
-@app.route("/all/")
+@app.route("/all")
 @app.route("/all/<key>/<path:value>")
 def all(key=None, value=None):
 
