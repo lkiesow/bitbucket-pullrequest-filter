@@ -18,7 +18,10 @@ import config
 import redis
 from data import PullRequest, ReleaseTicket
 
-r = redis.StrictRedis(host='localhost', db=0)
+try:
+	r = redis.StrictRedis(host='localhost', db=0)
+except AttributeError:
+	r = redis.Redis(host='localhost', db=0)
 
 apiurl = 'https://bitbucket.org/api/2.0/repositories/%s/pullrequests' % config.REPOSITORY
 
@@ -157,7 +160,7 @@ class Worker():
 				u.close()
 			except Exception as e:
 				sys.stderr.write('Error: Could not get list of pull requests')
-				sys.stderr.write(' --> %s' % e.message)
+				sys.stderr.write(' --> %s' % e)
 
 		# Get active pull requests from database
 		active_pr = set(r.keys('pr_*'))
@@ -177,7 +180,7 @@ class Worker():
 
 
 		# Finally try to get the release tickets:
-		releasetickets = [10125, 10472, 10739]
+		releasetickets = [10125, 11082, 10472, 10739, 11080]
 		for t in releasetickets:
 			nexturl = 'https://opencast.jira.com/rest/api/2/issue/MH-%i?expand=changelog' % t
 			u = urllib2.urlopen(urllib2.Request(nexturl))
