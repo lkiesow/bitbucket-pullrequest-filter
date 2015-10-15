@@ -32,25 +32,19 @@ function filterTable() {
 
 $(document).ready(function() {
 
-		$('#search').change(filterTable);
-		$('#search').keyup(filterTable);
-	for (var k in keys) {
-		var v = keys[k];
-		$('#search-' + v).change(filterTable);
-		$('#search-' + v).keyup(filterTable);
-	}
+	// Add events to input fields
+	$('input').change(filterTable).keyup(filterTable);
 
-	$('input').each(function() {
-		$(this).parent().append('<a onclick="cleanup(this);" class=clean>×</a>');
+	// Add clean input field icons
+	$('input').parent().append('<a onclick="cleanup(this);" class=clean>×</a>');
+
+	// Expand hidden elements
+	$('.ellipsis').click(function() {
+		$('.ellipsis').hide();
+		$('.hide').show();
 	});
 
-	$('.ellipsis').each(function() {
-		$(this).click(function() {
-			$('.ellipsis').hide();
-			$('.hide').show();
-		});
-	});
-
+	// Do an initial filtering
 	filterTable();
 
 })
