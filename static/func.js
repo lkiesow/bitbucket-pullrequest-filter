@@ -47,6 +47,17 @@ $(document).ready(function() {
 	// Do an initial filtering
 	filterTable();
 
+	// Add sorting functionality
+	$('th.sort').click(function() {
+		var field = this.getAttribute('data-sort');
+		var order = this.getAttribute('data-order') ? 1 : -1;
+		this.setAttribute('data-order', (order < 1) ? '1' : '');
+		var rows = $('tbody.list tr');
+		$('tbody.list').empty().append(rows.sort(function(a, b) {
+			return order * ($(a).find('td.' + field).text() > $(b).find('td.' + field).text() ? 1 : -1);
+		}));
+	});
+
 })
 
 function cleanup(e) {
