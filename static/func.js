@@ -4,11 +4,14 @@ filter = {};
 keys = [ 'id', 'created_on', 'author', 'title', 'source_repo', 'source_branch', 'dest_branch', 'reviewer' ];
 
 function filterTable() {
+	// prepare filter settings
 	for (var k in keys) {
 		var v = keys[k];
 		filter[v] = $('#search-' + v).val().toLowerCase();
 	}
 	filter['global'] = $('#search').val().toLowerCase();
+
+	// filter table
 	$('.list tr').each(function(i, row) {
 		for (var k in keys) {
 			var v = keys[k];
@@ -27,6 +30,8 @@ function filterTable() {
 		if ($(row).text().toLowerCase().indexOf(filter['global']) < 0) {
 			$(row).hide();
 		}
+
+		$('#pr-count').html($('.list tr:visible').length);
 	})
 }
 
