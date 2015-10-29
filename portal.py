@@ -56,8 +56,6 @@ def all(filterval=''):
 	requests = [ PullRequest(r.get(k)) for k in r.keys('*pr_*') ]
 	requests.sort(key=lambda pr: -pr.id)
 
-	print(len(requests))
-
 	# Additional, get data for release tickets
 	releasetickets = [ ReleaseTicket(r.get(k)) for k in r.keys('ticket_*') ]
 	releasetickets.sort(key=lambda rt: rt.version, reverse=True)
