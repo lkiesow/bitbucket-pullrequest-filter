@@ -11,8 +11,12 @@ function filterTable() {
 	}
 	filter['global'] = $('#search').val().toLowerCase();
 
+	// count visible rows
+	var visible = 0
+
 	// filter table
 	$('.list tr').each(function(i, row) {
+		visible++;
 		for (var k in keys) {
 			var v = keys[k];
 			if (!filter[v]) {
@@ -22,6 +26,7 @@ function filterTable() {
 			var cell = $(row).find('td.' + v).text().toLowerCase();
 			if (cell.indexOf(filter[v]) < 0) {
 				$(row).hide();
+				visible--;
 				break;
 			} else {
 				$(row).show();
@@ -31,7 +36,7 @@ function filterTable() {
 			$(row).hide();
 		}
 
-		$('#pr-count').html($('.list tr:visible').length);
+		$('#pr-count').html(visible);
 	})
 }
 
