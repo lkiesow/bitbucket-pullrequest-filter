@@ -74,24 +74,31 @@ def stats(month=0):
 				{'WWW-Authenticate': 'Basic realm="Login Required"'})
 	# Get time barrier
 	timebarrier = date.today() + relativedelta( months = -month )
-	stats = {}
+	review_stats = {}
+	pr_stats = {}
 	user = {}
 	for k in r.keys('*pr_*'):
 		pr = PullRequest(r.get(k))
-		if not pr.reviewer_user:
-			continue
 		if month and timebarrier > parse(pr.last_updated).date():
 			continue
-		if pr.reviewer_name:
-			user[pr.reviewer_user] = pr.reviewer_name
-		stats[pr.reviewer_user] = stats.get(pr.reviewer_user, []) + [pr.id]
+		if pr.reviewer_user:
+			if pr.reviewer_name:
+				user[pr.reviewer_user] = pr.reviewer_name
+			review_stats[pr.reviewer_user] = review_stats.get(pr.reviewer_user, []) + [pr.id]
+		if pr.author_user:
+			if pr.author_name:
+				user[pr.author_user] = pr.author_name
+			pr_stats[pr.author_user] = pr_stats.get(pr.author_user, []) + [pr.id]
 
-	stats = [ (k, user.get(k,k), len(v), [int(x) for x in v]) for k,v in stats.iteritems() ]
+	# review_stats = [(reviewer, reviewer_name, n_reviews, [pr_id, ...]),...]
+	review_stats = [ (k, user.get(k,k), len(v), [int(x) for x in v]) for k,v in review_stats.iteritems() ]
+	pr_stats = [ (k, user.get(k,k), len(v), [int(x) for x in v]) for k,v in pr_stats.iteritems() ]
 
 	# Sort by number of reviews
-	stats.sort(key=lambda r: r[2])
+	review_stats.sort(key=lambda r: r[2])
+	pr_stats.sort(key=lambda r: r[2])
 
-	return render_template('stats.html', stats=stats)
+	return render_template('stats.html', review_stats=review_stats, pr_stats=pr_stats)
 
 
 if __name__ == "__main__":

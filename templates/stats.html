@@ -13,7 +13,31 @@
 			</tr>
 		</thead>
 		<tbody>
-			{% for s in stats %}
+			{% for s in review_stats %}
+			<tr>
+				<td title="{{ s[0] }}">{{ s[1] }}</td>
+				<td>{{ s[2] }}</td>
+				<td class=pr>
+					{% for pr in s[3] %}
+					<a href="https://bitbucket.org/opencast-community/matterhorn/pull-request/{{ pr }}" title={{ pr }}>|</span>
+					{% endfor %}
+				</td>
+			</tr>
+			{% endfor %}
+		</tbody>
+	</table>
+
+
+	<table class=stats>
+		<thead>
+			<tr>
+				<th>Author</th>
+				<th>Count</th>
+				<th>Created Pull Requests</th>
+			</tr>
+		</thead>
+		<tbody>
+			{% for s in pr_stats %}
 			<tr>
 				<td title="{{ s[0] }}">{{ s[1] }}</td>
 				<td>{{ s[2] }}</td>
