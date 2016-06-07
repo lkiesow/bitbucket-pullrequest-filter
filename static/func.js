@@ -81,6 +81,11 @@ function branchfilter(branch) {
 	$('#search-dest_branch').keyup();
 }
 
+function authorfilter(author) {
+	$('#search-author').val(author);
+	$('#search-author').keyup();
+}
+
 function bookmark() {
 	var current_filter = '';
 	for (var k in filter) {

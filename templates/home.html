@@ -74,7 +74,7 @@
 				{% endif %}
 				<td class=id><a title="Go to pull request" href={{ pr.url }}>#{{ pr.id }}</a></td>
 				<td class=created_on><span title="{{ pr.created }}">{{ pr.created_date }}</span></a></td>
-				<td class=author title="{{ pr.author_user }}">{{ pr.author_name }}</td>
+				<td class=author title="{{ pr.author_user }}"><a href='#' onclick="authorfilter('{{ pr.author_name }}');">{{ pr.author_name }}</a></td>
 				<td class=title><a title="Go to pull request" href={{ pr.url }}>{{ pr.title|truncate(60, False, '…') }}</a></td>
 				<td class=ellipsis>⋮</td>
 				<td class="source_repo hide">{{ pr.source_repo or ''|truncate(29, True, '…') }}</td>
