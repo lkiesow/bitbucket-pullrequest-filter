@@ -82,7 +82,7 @@
 				<td class=dest_branch><a title="Filter by branch" href='#'
 						onclick="branchfilter('{{ pr.destination }}');">{{ pr.destination|truncate(12, True, '…') }}</a></td>
 				{% if pr.reviewer_name %}
-				<td class=reviewer>{{ pr.reviewer_name or '' }}
+				<td class=reviewer><a href='#' onclick="reviewerfilter('{{ pr.reviewer_name or '' }}');">{{ pr.reviewer_name or '' }}</a>
 					<i title="Days since the review was assigned">({{ pr.review_duration() }})</i></td>
 				{% endif %}
 			</tr>

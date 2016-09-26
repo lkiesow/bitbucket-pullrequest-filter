@@ -86,6 +86,11 @@ function authorfilter(author) {
 	$('#search-author').keyup();
 }
 
+function reviewerfilter(author) {
+	$('#search-reviewer').val(author);
+	$('#search-reviewer').keyup();
+}
+
 function bookmark() {
 	var current_filter = '';
 	for (var k in filter) {
