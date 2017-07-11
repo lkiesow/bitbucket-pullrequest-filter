@@ -49,7 +49,7 @@ def home(filterval=''):
 			releasetickets=releasetickets, filters=filters(filterval))
 
 
-@app.route("/all")
+@app.route("/all/")
 @app.route("/all/<path:filterval>")
 def all(filterval=''):
 
@@ -64,7 +64,7 @@ def all(filterval=''):
 			releasetickets=releasetickets, filters=filters(filterval))
 
 
-@app.route('/stats')
+@app.route('/stats/')
 @app.route('/stats/<int:month>')
 def stats(month=0):
 	auth = (request.authorization.username, request.authorization.password) \
