@@ -9,4 +9,4 @@ localpath = os.path.dirname(os.path.realpath(__file__))
 PULLREQUESTS   = '%s/data/pullrequests.json'   % localpath
 RELEASETICKETS = '%s/data/releasetickets.json' % localpath
 REVIEWERS      = '%s/data/reviewers.json'      % localpath
-REPOSITORY     = 'opencast-community/matterhorn'
+REPOSITORY     = 'opencast-community/opencast'
