@@ -146,7 +146,7 @@ class Worker():
 
     def get_release_tickets(self):
         url = 'https://opencast.jira.com/rest/api/2/search' \
-              + '?jql=summary%20~%20%22Merge%20the%20result%20of%20the%20current%20peer%20review%20to%22%20AND%20status%20%3D%20Open'
+              + '?jql=summary%20~%20"Merge%20the%20result%20of%20the%20current%20peer%20review%20to"%20AND%20resolution%20%3D%20Unresolved'
         u = urllib2.urlopen(urllib2.Request(url))
         keys = []
         try:
