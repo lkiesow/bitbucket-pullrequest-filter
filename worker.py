@@ -1,267 +1,235 @@
 #!/bin/env python
 # -*- coding: utf-8 -*-
 
-# Set default encoding to UTF-8
-import sys
-reload(sys)
-sys.setdefaultencoding('utf8')
-
-import time, datetime, pytz
-import daemon
-import signal, errno
-from daemon import runner
-import urllib2
-import json
-import os
+from data import PullRequest, ReleaseTicket
 from dateutil.parser import parse
 import config
+import json
+import logging
 import redis
-from data import PullRequest, ReleaseTicket
+import sys
+import urllib2
+
+log = logging.getLogger("worker")
+log.setLevel(logging.INFO)
+log.addHandler(logging.StreamHandler(sys.stderr))
 
 try:
     r = redis.StrictRedis(host='localhost', db=0)
 except AttributeError:
     r = redis.Redis(host='localhost', db=0)
 
-apiurl = 'https://bitbucket.org/api/2.0/repositories/%s/pullrequests' % config.REPOSITORY
+apiurl = 'https://bitbucket.org/api/2.0/repositories/%s/pullrequests' \
+         % config.REPOSITORY
+jiraapi = 'https://opencast.jira.com/rest/api/2/'
 
-def start_daemon():
-    sys.argv = [ sys.argv[0], 'start' ]
+
+def get_release_tickets():
+    url = jiraapi + 'search?jql=' \
+          + 'summary ~ "Merge the result of the current peer review to" '\
+          + 'AND resolution %3D Unresolved'
+    url = url.replace(' ', '%20')
+    u = urllib2.urlopen(urllib2.Request(url))
+    keys = []
     try:
-        daemon_runner = runner.DaemonRunner(Worker())
-        daemon_runner.do_action()
-    except daemon.runner.DaemonRunnerStartFailureError:
+        data = json.loads(u.read())
+        for issue in data.get('issues', []):
+            keys.append(issue.get('key'))
+    except Exception:
         pass
+    return keys
 
 
-class Worker():
-
-    path = os.path.dirname(os.path.realpath(__file__))
-
-    def __init__(self):
-        self.stdin_path = '/dev/null'
-        self.stdout_path = '%s/bbprf-worker.log' % self.path
-        self.stderr_path = '%s/bbprf-worker.error' % self.path
-        self.pidfile_path =  '%s/bbprf-worker.pid' % self.path
-        self.pidfile_timeout = 0
-
-
-    def get_reviewer(self, pr):
-
-        url = '%s/%s/comments' % (apiurl, pr.id)
-        comments = []
-
-        while url:
-            u = urllib2.urlopen(urllib2.Request(url))
-            try:
-                data = json.loads(u.read())
-                comments += data.get('values') or []
-                url = data.get('next')
-            finally:
-                u.close()
-
-        # Make sure revies are sorted by date
-        comments.sort(key=lambda r: r.get('created_on'))
-
-        pr.reviewer_name = None
-        pr.reviewer_user = None
-
-        # Start with last comment to get the last person taking up the job as
-        # reviewer
-        for c in comments[::-1]:
-            if '//review//' in c['content']['raw']:
-                pr.reviewer_name = c['user']['display_name']
-                pr.reviewer_user = c['user']['username']
-                pr.review_start  = c['updated_on']
-                print 'Found reviewer for %s: %s' % (pr.id, pr.reviewer_name)
-                break
-
-        pr.active = True
-
-        # We can stop here if there is no reviewer
-        if not pr.reviewer_user:
-            print 'Found no reviewer for %s' % pr.id
-            return
-
-        # Check if a pull request is active or on hold. If no //hold// can be
-        # found, it's active by default.
-        for c in comments[::-1]:
-            # Only the official reviewer can put a pull request on hold. Skip all
-            # other comments.
-            if pr.reviewer_user != c['user']['username']:
-                continue
-            if '//resume//' in c['content']['raw']:
-                break
-            if '//hold//' in c['content']['raw']:
-                pr.active = False
-                break
-
-
-    def update_pullrequest(self, req, force=False):
-        pr = PullRequest(r.get('pr_%s' % req['id']))
-
-        pr.author_name          = req['author'].get('display_name')
-        pr.author_user          = req['author']['username']
-        pr.created_date         = parse(req['created_on']).strftime('%Y-%m-%d')
-        pr.created              = req['created_on']
-        pr.destination          = req['destination']['branch']['name']
-        pr.id                   = req['id']
-        pr.source_branch        = req['source']['branch']['name']
-        pr.source_repo          = (req['source'].get('repository') or {}).get('full_name')
-        pr.title                = req['title']
-        pr.url                  = req['links']['html']['href']
-        pr.state                = req['state'].lower()
-
-        # Check for reviewer if the pr was updated since last time
-        if force or pr.last_updated != req.get('updated_on'):
-            pr.last_updated = req.get('updated_on')
-            self.get_reviewer(pr)
-
-        # Update the approved state in any case
-        try:
-            self.get_approved(pr)
-        except:
-            pass
-
-        # Store it in the redis db
-        if pr.state == 'open':
-            r.set('pr_%s' % pr.id, pr.json())
-        else:
-            r.set('done_pr_%s' % pr.id, pr.json())
-
-
-    def get_approved(self, pr):
-        url = '%s/%s' % (apiurl, pr.id)
-
+def update_release_tickets():
+    # Finally try to get the release tickets:
+    releasetickets = get_release_tickets()
+    log.info('Release tickets: %s' % releasetickets)
+    # Delete old keys
+    for key in r.keys('ticket_*'):
+        if not key.split('_', 1)[-1] in releasetickets:
+            r.delete(key)
+    for t in releasetickets:
+        url = jiraapi + 'issue/%s?expand=changelog' % t
         u = urllib2.urlopen(urllib2.Request(url))
         try:
             data = json.loads(u.read())
+            # try to find out when the last person was assigned:
+            for h in data['changelog']['histories'][::-1]:
+                if [True for i in h['items'] if i['field'] == 'assignee']:
+                    lastchanged = h['created']
+                    break
+            data = data['fields']
+            rt = ReleaseTicket()
+            rt.url = 'https://opencast.jira.com/browse/%s' % t,
+            rt.version = (data['fixVersions']+[{}])[0].get('name', ''),
+            rt.last_changed = lastchanged,
+            rt.assignee = (data.get('assignee') or {}).get('displayName', '')
+            r.set('ticket_%s' % t, rt.json())
         finally:
             u.close()
 
-        pr.approved_by = [ p['user']['username'] for p in data['participants'] if p['approved'] ]
-        pr.approved_by_reviewer = pr.reviewer_user in pr.approved_by
-        if pr.approved_by:
-            print 'Pull Request #%s was approved by: %s' %(pr.id, pr.approved_by)
 
-    def get_release_tickets(self):
-        url = 'https://opencast.jira.com/rest/api/2/search' \
-              + '?jql=summary%20~%20"Merge%20the%20result%20of%20the%20current%20peer%20review%20to"%20AND%20resolution%20%3D%20Unresolved'
+def get_reviewer(pr):
+    '''Find reviewer in comments of Bitbucket pull request and update the pull
+    request object passed to this function-
+
+    :param pr: Pull request object to update
+    '''
+    url = '%s/%s/comments' % (apiurl, pr.id)
+    comments = []
+
+    while url:
         u = urllib2.urlopen(urllib2.Request(url))
-        keys = []
         try:
             data = json.loads(u.read())
-            for issue in data.get('issues', []):
-                keys.append(issue.get('key'))
-        except Exception:
-            pass
-        return keys
+            comments += data.get('values') or []
+            url = data.get('next')
+        finally:
+            u.close()
+
+    # Make sure reviews are sorted by date
+    comments.sort(key=lambda r: r.get('created_on'), reverse=True)
+
+    # Start with last comment to get the last person taking up the job as
+    # reviewer
+    for c in comments:
+        if '//review//' in c['content']['raw']:
+            pr.reviewer_name = c['user']['display_name']
+            pr.reviewer_user = c['user']['username']
+            pr.review_start = c['updated_on']
+            log.info('Found reviewer for %s: %s' % (pr.id, pr.reviewer_name))
+            return
+
+    pr.reviewer_name = None
+    pr.reviewer_user = None
+    log.info('Found no reviewer for %s' % pr.id)
 
 
-    def worker(self):
-        requests = []
+def get_approved(pr):
+    '''Request detailed pull request data and check if a pull request was
+    approved by a participant.
 
-        nexturl = '%s?pagelen=25' % apiurl
+    :param pr: PullRequest object
+    '''
+    url = '%s/%s' % (apiurl, pr.id)
 
-        while nexturl:
-            #print 'Requesting data from %s' % nexturl
-            try:
-                u = urllib2.urlopen(urllib2.Request(nexturl))
-                data = json.loads(u.read())
-                requests += data.get('values') or []
-                nexturl = data.get('next')
-                u.close()
-            except Exception as e:
-                sys.stderr.write('Error: Could not get list of pull requests')
-                sys.stderr.write(' --> %s' % e)
-
-        # Get active pull requests from database
-        active_pr = set(r.keys('pr_*'))
-
-        # Add reviewer
-        for req in requests:
-            self.update_pullrequest(req)
-            # Remove still active PR from list
-            try:
-                active_pr.remove('pr_%s' % req['id'])
-            except:
-                pass
-
-        # Set old PRs to inactive
-        for key in active_pr:
-            r.rename(key, 'done_%s' % key)
-
-
-        # Finally try to get the release tickets:
-        releasetickets = self.get_release_tickets()
-        # Delete old keys
-        for key in r.keys('ticket_*'):
-            if not key.split('_', 1)[-1] in releasetickets:
-                r.delete(key)
-        for t in releasetickets:
-            nexturl = 'https://opencast.jira.com/rest/api/2/issue/%s?expand=changelog' % t
-            u = urllib2.urlopen(urllib2.Request(nexturl))
-            try:
-                data = json.loads(u.read())
-                # try to find out when the last person was assigned:
-                lastchanges = data['fields']['updated']
-                for h in data['changelog']['histories'][::-1]:
-                    if [ True for i in h['items'] if i['field'] == 'assignee' ]:
-                        lastchanged = h['created']
-                        break
-                data = data['fields']
-                rt = ReleaseTicket(
-                        url='https://opencast.jira.com/browse/%s' % t,
-                        version=data['fixVersions'][0]['name'] if data['fixVersions'] else '',
-                        last_changed=lastchanged,
-                        assignee=data['assignee'].get('displayName') if data.get('assignee') else ''
-                    )
-                r.set('ticket_%s' % t, rt.json())
-            except Exception as e:
-                sys.stderr.write('Error: Could not get release ticket (MH-%s)' % t)
-                sys.stderr.write(' --> %s' % e.message)
-            finally:
-                u.close()
-
-
-    def update_pullrequest_id(self, i, force=False):
-        u = urllib2.urlopen(urllib2.Request('%s/%s' % (apiurl, i)))
-        req = json.loads(u.read())
+    u = urllib2.urlopen(urllib2.Request(url))
+    try:
+        data = json.loads(u.read())
+    finally:
         u.close()
-        self.update_pullrequest(req, force)
+
+    pr.approved_by = [p['user']['username']
+                      for p in data['participants']
+                      if p['approved']]
+    pr.approved_by_reviewer = pr.reviewer_user in pr.approved_by
+    if pr.approved_by:
+        log.info('Pull Request #%s approved by: %s' % (pr.id, pr.approved_by))
 
 
-    def complete_db(self):
-        i = 1
+def update_pull_request(req, force=False):
+    '''Update a pull request in the redis database based on an entry of
+    Bitbucket's list of open pull requests.
+
+    :param req: Pull request data
+    :param force: Update even if it seems up to date
+    '''
+    pr = PullRequest(r.get('pr_%s' % req['id']))
+
+    log.debug(req['source'])
+    pr.author_name = req['author'].get('display_name')
+    pr.author_user = req['author'].get('username')
+    pr.created_date = parse(req['created_on']).strftime('%Y-%m-%d')
+    pr.created = req['created_on']
+    pr.destination = req['destination']['branch']['name']
+    pr.id = req['id']
+    pr.source_branch = req['source']['branch']['name']
+    pr.source_repo = (req['source'].get('repository') or {}).get('full_name')
+    pr.title = req['title']
+    pr.url = req['links']['html']['href']
+    pr.state = req['state'].lower()
+
+    # Check for reviewer if the pr was updated since last time
+    if force or pr.last_updated != req.get('updated_on'):
+        pr.last_updated = req.get('updated_on')
+        get_reviewer(pr)
+
+    # Update the approved state in any case
+    get_approved(pr)
+
+    # Store it in redis
+    if pr.state == 'open':
+        r.set('pr_%s' % pr.id, pr.json())
+    else:
+        r.set('done_pr_%s' % pr.id, pr.json())
+
+
+def get_pull_requests():
+    requests = []
+    nexturl = '%s?pagelen=50' % apiurl
+
+    while nexturl:
+        log.debug('Requesting data from %s' % nexturl)
         try:
-            while True:
-                print 'Pull Request #%i' % i
-                self.update_pullrequest_id(i)
-                i += 1
-        except:
-            pass
+            u = urllib2.urlopen(urllib2.Request(nexturl))
+            data = json.loads(u.read())
+            requests += data.get('values', [])
+            nexturl = data.get('next')
+            u.close()
+        except Exception as e:
+            sys.stderr.write('Error: Could not get list of pull requests')
+            sys.stderr.write(' --> %s' % e)
+    return requests
 
 
-    def run(self):
+def update_pull_requests(requests):
+    '''Go through list of open pull requests retrieved from BitBucket and
+    update the database with the new data.
+
+    :param requests: Lift of open pull requests (parsed JSON)
+    '''
+    # Get active pull requests from database
+    old_pr = set(r.keys('pr_*'))
+    new_pr = set()
+
+    # Add reviewer
+    for req in requests:
+        update_pull_request(req)
+        new_pr.add('pr_%s' % req['id'])
+
+    # Set old PRs to inactive
+    for key in (old_pr - new_pr):
+        r.rename(key, 'done_%s' % key)
+
+
+def main():
+    requests = get_pull_requests()
+    update_pull_requests(requests)
+    update_release_tickets()
+
+
+def update_pullrequest_id(i, force=False):
+    log.info('Updating pull request #%i' % i)
+    u = urllib2.urlopen(urllib2.Request('%s/%s' % (apiurl, i)))
+    req = json.loads(u.read())
+    u.close()
+    update_pull_request(req, force)
+
+
+def complete_db():
+    i = 1
+    try:
         while True:
-            try:
-                self.worker()
-            except:
-                pass
-            time.sleep(60)
+            update_pullrequest_id(i)
+            i += 1
+    except:
+        pass
 
 
 if __name__ == "__main__":
     if sys.argv[1:] == ['complete-db']:
-        w = Worker()
-        w.complete_db()
-        exit()
-    if sys.argv[1:] == ['daemon']:
-        start_daemon()
+        complete_db()
+    elif sys.argv[1:] == []:
+        main()
     else:
-        w = Worker()
-        try:
-            w.update_pullrequest_id(int(sys.argv[1]), True)
-        except:
-            w.worker()
-        exit()
+        update_pullrequest_id(int(sys.argv[1]), True)
