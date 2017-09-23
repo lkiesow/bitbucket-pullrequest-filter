@@ -61,7 +61,7 @@ def update_release_tickets():
                     break
             data = data['fields']
             rt = ReleaseTicket()
-            rt.url = 'https://opencast.jira.com/browse/%s' % t,
+            rt.url = 'https://opencast.jira.com/browse/%s' % t
             rt.version = (data['fixVersions']+[{}])[0].get('name', '')
             rt.last_changed = lastchanged
             rt.assignee = (data.get('assignee') or {}).get('displayName', '')
