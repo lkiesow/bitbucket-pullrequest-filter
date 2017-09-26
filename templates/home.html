@@ -62,7 +62,7 @@
 		</thead>
 		<tbody class=list>
 			{% for pr in requests %}
-			<tr class="{{ '' if pr.active else 'hold' }}">
+			<tr>
 				{% if pr.state == 'open' and pr.approved_by_reviewer %}
 				<td class=appr_r title="Approved by official reviewer">✔</td>
 				{% elif pr.state == 'open' and pr.approved_by %}
