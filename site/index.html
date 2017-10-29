@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Opencast: Open Pull Requests</title>
+    <link rel="stylesheet" href="style.css">
+  </head>
+  <body>
+    <header>
+      <img src=https://bytebucket.org/opencast-community/opencast/raw/1507ff619e70193022ea76742c3204e832cd27de/shared-resources/img/logo/opencast.svg />
+      <div>Open pull requests</div>
+    </header>
+
+    <div id=app>
+
+    <section>
+      <div v-if="loading" class="loader"><img src="http://cdnjs.cloudflare.com/ajax/libs/semantic-ui/0.16.1/images/loader-large.gif" alt="loader"></div>
+      <release-tickets :tickets="tickets" v-if="!loading"></release-tickets>
+    </section>
+
+    <section id=pr>
+      <div v-if="prLoading" class="loader"><img src="http://cdnjs.cloudflare.com/ajax/libs/semantic-ui/0.16.1/images/loader-large.gif" alt="loader"></div>
+      <pull-requests :requests=requests :filter=filter :keys=keys v-if="!prLoading"></pull-requests>
+    </section>
+
+    </div>
+
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <script src="https://unpkg.com/vue"></script>
+    <script src="app.js"></script>
+  </body>
+</html>
