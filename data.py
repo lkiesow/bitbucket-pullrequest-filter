@@ -68,16 +68,4 @@ class ReleaseTicket(Base):
 
 	url          = None
 	version      = None
-	last_changed = None
 	assignee     = None
-
-
-	def merge_duration(self, default=None):
-		if self.last_changed:
-			return (datetime.datetime.now(pytz.utc) - parse(self.last_changed)).days
-		return default
-
-	def format_date(self):
-		if not self.last_changed:
-			return self.last_changed
-		return parse(self.last_changed).strftime('%Y-%m-%d %H:%M:%S'),

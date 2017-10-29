@@ -17,17 +17,13 @@
 			<tr>
 				<th>Release</th>
 				<th>Current Assignee</th>
-				<th title="Date and time the ticket was assigned to the current reviewer (UTC)">Reassigned</th>
-				<th title="Days since the ticket was assigned to the current reviewer">Days</th>
 			</tr>
 		</thead>
 		<tbody>
 			{% for rt in releasetickets %}
-			<tr {{ 'style=color:red;' if rt.merge_duration(0) >= 2 else '' | safe }}>
+			<tr>
 				<td><a href="{{ rt.url }}">{{ rt.version }}</a></td>
 				<td>{{ rt.assignee }}</td>
-				<td>{{ rt.last_changed }}</td>
-				<td>≥ {{ rt.merge_duration(0) }} days</td>
 			</tr>
 			{% endfor %}
 		</tbody>

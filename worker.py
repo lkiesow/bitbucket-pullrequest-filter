@@ -53,17 +53,10 @@ def update_release_tickets():
         u = urllib2.urlopen(urllib2.Request(url))
         try:
             data = json.loads(u.read())
-            # try to find out when the last person was assigned:
-            lastchanged = None
-            for h in data['changelog']['histories'][::-1]:
-                if [True for i in h['items'] if i['field'] == 'assignee']:
-                    lastchanged = h['created']
-                    break
             data = data['fields']
             rt = ReleaseTicket()
             rt.url = 'https://opencast.jira.com/browse/%s' % t
             rt.version = (data['fixVersions']+[{}])[0].get('name', '')
-            rt.last_changed = lastchanged
             rt.assignee = (data.get('assignee') or {}).get('displayName', '')
             r.set('ticket_%s' % t, rt.json())
         finally:
