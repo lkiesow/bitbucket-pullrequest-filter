@@ -49,6 +49,27 @@ def home(filterval=''):
 			releasetickets=releasetickets, filters=filters(filterval))
 
 
+@app.route("/pr.json")
+def api_pr():
+	requests = [ PullRequest(r.get(k)).data() for k in r.keys('pr_*') ]
+	requests.sort(key=lambda pr: pr['id'])
+	return json.dumps(requests)
+
+
+@app.route("/release.json")
+def api_tickets():
+	releasetickets = [ ReleaseTicket(r.get(k)).data() for k in r.keys('ticket_*') ]
+	releasetickets.sort(key=lambda rt: rt['version'], reverse=True)
+	return json.dumps(releasetickets)
+
+
+@app.route("/all-pr.json")
+def api_all_pr():
+	requests = [ PullRequest(r.get(k)).data() for k in r.keys('*pr_*') ]
+	requests.sort(key=lambda pr: pr['id'])
+	return json.dumps(requests)
+
+
 @app.route("/all/")
 @app.route("/all/<path:filterval>")
 def all(filterval=''):
