@@ -2,13 +2,14 @@ BitBucket Pull Request Filter
 =============================
 
 This is a small web application making it possible to filter and sort pull
-requests on BitBucket. It is written for the Opencast Matterhorn project.
+requests on BitBucket. It is written for the [Apereo Opencast
+](http://opencast.org) project.
 
 Demo
 ----
 
-One installation tracking all open pull request for Opencast Matterhorn can be
-found at http://repo.virtuos.uos.de:5001/
+An installation tracking all open pull request for Opencast can be found at
+https://pullrequests.opencast.org
 
 License
 -------
