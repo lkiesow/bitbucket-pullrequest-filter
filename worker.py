@@ -45,7 +45,7 @@ def update_release_tickets():
     log.info('Release tickets: %s' % releasetickets)
     # Delete old keys
     for key in r.keys('ticket_*'):
-        if not key.split('_', 1)[-1] in releasetickets:
+        if not key.split(b'_', 1)[-1] in releasetickets:
             r.delete(key)
     for t in releasetickets:
         url = jiraapi + 'issue/%s?expand=changelog' % t
