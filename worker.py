@@ -45,7 +45,8 @@ def update_release_tickets():
     log.info('Release tickets: %s' % releasetickets)
     # Delete old keys
     for key in r.keys('ticket_*'):
-        if not key.split(b'_', 1)[-1] in releasetickets:
+        key = key.decode('ascii')
+        if not key.split('_', 1)[-1] in releasetickets:
             r.delete(key)
     for t in releasetickets:
         url = jiraapi + 'issue/%s?expand=changelog' % t
@@ -148,13 +149,9 @@ def get_pull_requests():
 
     while nexturl:
         log.debug('Requesting data from %s' % nexturl)
-        try:
-            data = get_json(nexturl)
-            requests += data.get('values', [])
-            nexturl = data.get('next')
-        except Exception as e:
-            sys.stderr.write('Error: Could not get list of pull requests')
-            sys.stderr.write(' --> %s' % e)
+        data = get_json(nexturl)
+        requests += data.get('values', [])
+        nexturl = data.get('next')
     return requests
 
 
@@ -171,11 +168,11 @@ def update_pull_requests(requests):
     # Add reviewer
     for req in requests:
         update_pull_request(req)
-        new_pr.add('pr_%s' % req['id'])
+        new_pr.add(('pr_%s' % req['id']).encode('ascii'))
 
     # Set old PRs to inactive
     for key in (old_pr - new_pr):
-        r.rename(key, 'done_%s' % key)
+        r.rename(key, b'done_' + key)
 
 
 def main():
