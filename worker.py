@@ -4,7 +4,6 @@
 from data import PullRequest, ReleaseTicket
 from dateutil.parser import parse
 import config
-import json
 import logging
 import redis
 import sys
