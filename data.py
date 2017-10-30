@@ -1,10 +1,4 @@
-#!/bin/env python
 # -*- coding: utf-8 -*-
-
-# Set default encoding to UTF-8
-import sys
-reload(sys)
-sys.setdefaultencoding('utf8')
 
 import json
 import time, datetime, pytz
@@ -16,7 +10,7 @@ class Base:
 	def __init__(self, *args, **kwargs):
 		if args and args[0]:
 			kwargs = json.loads(args[0])
-		for k,v in (kwargs or {}).iteritems():
+		for k,v in (kwargs or {}).items():
 			getattr(self, k)
 			setattr(self, k, v)
 

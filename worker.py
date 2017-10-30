@@ -8,7 +8,7 @@ import json
 import logging
 import redis
 import sys
-import urllib2
+import requests
 
 log = logging.getLogger("worker")
 log.setLevel(logging.INFO)
@@ -24,19 +24,19 @@ apiurl = 'https://bitbucket.org/api/2.0/repositories/%s/pullrequests' \
 jiraapi = 'https://opencast.jira.com/rest/api/2/'
 
 
+def get_json(url):
+    return requests.get(url).json()
+
+
 def get_release_tickets():
     url = jiraapi + 'search?jql=' \
           + 'summary ~ "Merge the result of the current peer review to" '\
           + 'AND resolution %3D Unresolved'
     url = url.replace(' ', '%20')
-    u = urllib2.urlopen(urllib2.Request(url))
     keys = []
-    try:
-        data = json.loads(u.read())
-        for issue in data.get('issues', []):
-            keys.append(issue.get('key'))
-    except Exception:
-        pass
+    data = get_json(url)
+    for issue in data.get('issues', []):
+        keys.append(issue.get('key'))
     return keys
 
 
@@ -50,17 +50,12 @@ def update_release_tickets():
             r.delete(key)
     for t in releasetickets:
         url = jiraapi + 'issue/%s?expand=changelog' % t
-        u = urllib2.urlopen(urllib2.Request(url))
-        try:
-            data = json.loads(u.read())
-            data = data['fields']
-            rt = ReleaseTicket()
-            rt.url = 'https://opencast.jira.com/browse/%s' % t
-            rt.version = (data['fixVersions']+[{}])[0].get('name', '')
-            rt.assignee = (data.get('assignee') or {}).get('displayName', '')
-            r.set('ticket_%s' % t, rt.json())
-        finally:
-            u.close()
+        data = get_json(url)['fields']
+        rt = ReleaseTicket()
+        rt.url = 'https://opencast.jira.com/browse/%s' % t
+        rt.version = (data['fixVersions']+[{}])[0].get('name', '')
+        rt.assignee = (data.get('assignee') or {}).get('displayName', '')
+        r.set('ticket_%s' % t, rt.json())
 
 
 def get_reviewer(pr):
@@ -73,13 +68,9 @@ def get_reviewer(pr):
     comments = []
 
     while url:
-        u = urllib2.urlopen(urllib2.Request(url))
-        try:
-            data = json.loads(u.read())
-            comments += data.get('values') or []
-            url = data.get('next')
-        finally:
-            u.close()
+        data = get_json(url)
+        comments += data.get('values') or []
+        url = data.get('next')
 
     # Make sure reviews are sorted by date
     comments.sort(key=lambda r: r.get('created_on'), reverse=True)
@@ -105,13 +96,7 @@ def get_approved(pr):
 
     :param pr: PullRequest object
     '''
-    url = '%s/%s' % (apiurl, pr.id)
-
-    u = urllib2.urlopen(urllib2.Request(url))
-    try:
-        data = json.loads(u.read())
-    finally:
-        u.close()
+    data = get_json('%s/%s' % (apiurl, pr.id))
 
     pr.approved_by = [p['user']['username']
                       for p in data['participants']
@@ -165,11 +150,9 @@ def get_pull_requests():
     while nexturl:
         log.debug('Requesting data from %s' % nexturl)
         try:
-            u = urllib2.urlopen(urllib2.Request(nexturl))
-            data = json.loads(u.read())
+            data = get_json(nexturl)
             requests += data.get('values', [])
             nexturl = data.get('next')
-            u.close()
         except Exception as e:
             sys.stderr.write('Error: Could not get list of pull requests')
             sys.stderr.write(' --> %s' % e)
@@ -204,10 +187,8 @@ def main():
 
 def update_pullrequest_id(i, force=False):
     log.info('Updating pull request #%i' % i)
-    u = urllib2.urlopen(urllib2.Request('%s/%s' % (apiurl, i)))
-    req = json.loads(u.read())
-    u.close()
-    update_pull_request(req, force)
+    data = get_json('%s/%s' % (apiurl, i))
+    update_pull_request(data, force)
 
 
 def complete_db():
