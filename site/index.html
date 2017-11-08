@@ -13,14 +13,35 @@
     <div id=app>
 
     <section>
-      <div v-if="loading" class="loader"><img src="http://cdnjs.cloudflare.com/ajax/libs/semantic-ui/0.16.1/images/loader-large.gif" alt="loader"></div>
+      <span v-if="loading" class="loader">
+        <img src="http://cdnjs.cloudflare.com/ajax/libs/semantic-ui/0.16.1/images/loader-large.gif"
+          alt="loader"></span>
       <release-tickets :tickets="tickets" v-if="!loading"></release-tickets>
     </section>
 
-    <section id=pr>
+    <section>
+      <div class=table>
+        <div class=row>
+          <span class=cell>Options</span>
+        </div>
+        <div class=row>
+          <div class=cfgcell>
+            <input type=checkbox id=all v-model=all />
+            <label for=all>show all requests</label>
+          </div>
+        </div>
+        <div class=row>
+          <div class=cfgcell>
+            <input type=checkbox id=reverse v-model=reverse />
+            <label for=reverse>reverse sorting</label>
+          </div>
+        </div>
+    </section>
+
+    <article id=pr>
       <div v-if="prLoading" class="loader"><img src="http://cdnjs.cloudflare.com/ajax/libs/semantic-ui/0.16.1/images/loader-large.gif" alt="loader"></div>
       <pull-requests :requests=requests :filter=filter :keys=keys v-if="!prLoading"></pull-requests>
-    </section>
+    </article>
 
     </div>
 

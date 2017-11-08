@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import json
+from distutils.util import strtobool
 from dateutil.parser import parse
 from datetime import date
 from dateutil.relativedelta import relativedelta
@@ -43,13 +44,6 @@ def home(filterval=''):
                            filters=filters(filterval))
 
 
-@app.route("/pr.json")
-def api_pr():
-    requests = [PullRequest(r.get(k)).data() for k in r.keys('pr_*')]
-    requests.sort(key=lambda pr: pr['id'])
-    return json.dumps(requests)
-
-
 @app.route("/release.json")
 def api_tickets():
     releasetickets = [ReleaseTicket(r.get(k)).data()
@@ -58,11 +52,18 @@ def api_tickets():
     return json.dumps(releasetickets)
 
 
-@app.route("/all-pr.json")
-def api_all_pr():
-    requests = [PullRequest(r.get(k)).data() for k in r.keys('*pr_*')]
-    requests.sort(key=lambda pr: pr['id'])
-    return json.dumps(requests)
+@app.route("/pr.json")
+def api_pr():
+    reverse = strtobool(request.args.get('reverse', 'no'))
+    pattern = '*pr_*' if strtobool(request.args.get('all', 'no')) else 'pr_*'
+    keys = r.keys(pattern)
+    keys.sort(key=lambda x: int(x.split('_')[-1]), reverse=reverse)
+    def requests():
+        yield '['
+        for key in keys[0:-1]:
+            yield r.get(key) + ','
+        yield r.get(keys[-1]) + ']'
+    return Response(requests(), content_type='application/json')
 
 
 @app.route("/all/")

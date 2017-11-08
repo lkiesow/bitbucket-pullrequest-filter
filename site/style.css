@@ -11,6 +11,12 @@ header {
   margin: 30px;
 }
 
+section {
+  display: inline-block;
+  vertical-align: top;
+  padding: 10px;
+}
+
 header div {
   margin-top: -10px;
   padding-left: 100px;
@@ -21,7 +27,7 @@ a {
   color: black;
 }
 
-a:hover {
+.row:hover {
   background-color: #eee;
 }
 
@@ -48,6 +54,13 @@ a:hover {
   text-overflow: ellipsis;
 }
 
+.cfgcell {
+  display: table-cell;
+  padding: 5px;
+  border-bottom: 1px solid silver;
+  white-space: nowrap;
+}
+
 #pr {
   margin-top: 30px;
 }
@@ -68,6 +81,6 @@ a:hover {
   max-width: 80px;
 }
 
-input {
+input[type=text] {
   width: 100%;
 }
