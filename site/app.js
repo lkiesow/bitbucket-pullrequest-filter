@@ -7,26 +7,26 @@ Vue.component('pull-requests', {
   props: ['requests', 'filter', 'keys'],
   template: `
   <div class=table>
-	  <div class=row>
-		 <span class=cell v-for="key in keys">{{ key.replace(/_.*$/, '') }}</span>
-	  </div>
-	  <div class=row>
-		 <div class=cell v-for="key in keys">
-			<input type=search v-model="filter[key]"
-			  :placeholder="key.replace('_', ' ')" />
-		 </div>
-	  </div>
-	  <div class="row" v-if="filter_row(pr)" v-for="pr in requests">
-		  <a class=cell :href=pr.url :title=pr.id>#{{ pr.id }}</a>
-		  <a class=cell :href=pr.url :title=pr.created_date>{{ pr.created_date }}</a>
-		  <span class=cell :title=pr.author_name
+    <div class=row>
+      <span class=cell v-for="key in keys">{{ key.replace(/_.*$/, '') }}</span>
+    </div>
+    <div class=row>
+      <div class=cell v-for="key in keys">
+      <input type=search v-model="filter[key]"
+        :placeholder="key.replace('_', ' ')" />
+      </div>
+    </div>
+    <div class="row" v-if="filter_row(pr)" v-for="pr in requests">
+      <a class=cell :href=pr.url :title=pr.id>#{{ pr.id }}</a>
+      <a class=cell :href=pr.url :title=pr.created_date>{{ pr.created_date }}</a>
+      <span class=cell :title=pr.author_name
         v-on:click="filter['author_name'] = pr.author_name">{{ pr.author_name }}</span>
-		  <a class=cell :href=pr.url :title=pr.title>{{ pr.title }}</a>
-		  <span class=cell :title=pr.destination
+      <a class=cell :href=pr.url :title=pr.title>{{ pr.title }}</a>
+      <span class=cell :title=pr.destination
         v-on:click="filter['destination'] = pr.destination">{{ pr.destination }}</span>
-		  <span class=cell :title=pr.reviewer_name
+      <span class=cell :title=pr.reviewer_name
         v-on:click="filter['reviewer_name'] = pr.reviewer_name">{{ pr.reviewer_name }}</span>
-	  </div>
+    </div>
   </div>
   `,
 methods: {
