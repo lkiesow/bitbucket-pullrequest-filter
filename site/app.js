@@ -12,7 +12,7 @@ Vue.component('pull-requests', {
 	  </div>
 	  <div class=row>
 		 <div class=cell v-for="key in keys">
-			<input type=text v-model="filter[key]"
+			<input type=search v-model="filter[key]"
 			  :placeholder="key.replace('_', ' ')" />
 		 </div>
 	  </div>
